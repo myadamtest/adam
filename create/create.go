@@ -1,6 +1,7 @@
 package create
 
 import (
+	"adam/utils"
 	"bytes"
 	"fmt"
 	"github.com/myadamtest/logkit"
@@ -19,6 +20,11 @@ clone项目模板
 执行命令 go mod download
 */
 func CreateProject(projectName, templateUrl, templateName string) {
+	if projectName == "" {
+		logkit.Errorf("project name can't empty")
+		return
+	}
+
 	_, err := os.Stat(fmt.Sprintf("./%s", projectName))
 	if !os.IsNotExist(err) {
 		logkit.Errorf("project %s already", projectName)
@@ -58,10 +64,7 @@ func CreateProject(projectName, templateUrl, templateName string) {
 		return
 	}
 
-	cmd = exec.Command("go", "mod", "download")
-	cmd.Dir = fmt.Sprintf("./%s", projectName)
-	cmd.Stderr = os.Stdout
-	err = cmd.Run()
+	err = utils.GoModDownload(fmt.Sprintf("./%s", projectName))
 
 	logkit.Infof("%s", err)
 }
