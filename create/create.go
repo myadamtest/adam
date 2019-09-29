@@ -65,8 +65,11 @@ func CreateProject(projectName, templateUrl, templateName string) {
 	}
 
 	err = utils.GoModDownload(fmt.Sprintf("./%s", projectName))
-
-	logkit.Infof("%s", err)
+	if err != nil {
+		fmt.Println("create fail!", err)
+		return
+	}
+	fmt.Println(fmt.Sprintf("project [%s] create success", projectName))
 }
 
 func rangeDirReplaceFile(dir, old, new string) error {

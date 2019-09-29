@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"adam/utils"
 	"fmt"
 	"io/ioutil"
 	"runtime"
@@ -34,20 +35,21 @@ func TestCharact(t *testing.T) {
 	//reflect.ValueOf("d")
 	//fmt.Println(m.)
 
-}
+	//b,err := ioutil.ReadFile("../protofile/social_relations_service.proto")
+	//if err!=nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	//
+	//fmt.Println(string(b))
 
-func MyParse(char int, ct *ParseNodeContext) {
-	switch ct.Tp {
-	case 1:
-		fmt.Println(1)
-	default:
-		fmt.Println("default")
-	}
+	str := utils.FirstToUpper("agfdre")
+	fmt.Println(str)
 }
 
 type INode interface {
 	Get(out interface{})
-	Parse(char int)
+	Parse(char int) bool
 }
 
 type MethodNode struct {
@@ -59,8 +61,8 @@ func (n *MethodNode) Get(out interface{}) {
 
 }
 
-func (n *MethodNode) Parse(char int) {
-
+func (n *MethodNode) Parse(char int) bool {
+	return false
 }
 
 const (
@@ -80,7 +82,7 @@ type ParseNodeContext struct {
 func (pnc *ParseNodeContext) Parse(char int) {
 	switch pnc.Tp {
 	case nodeTypeMethod:
-		pnc.DoingNode.Parse(char)
+		_ = pnc.DoingNode.Parse(char)
 		/**
 		if end add to node list.
 		set
@@ -89,4 +91,16 @@ func (pnc *ParseNodeContext) Parse(char int) {
 	default:
 		fmt.Println("default")
 	}
+}
+
+var specialCharList = [...]SpecialChar{
+	{"\"", "\""},
+	{"/*", "*/"},
+	{"{", "}"},
+	{"(", ")"},
+}
+
+type SpecialChar struct {
+	Start string
+	End   string
 }

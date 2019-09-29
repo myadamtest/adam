@@ -10,10 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"text/template"
 )
-
-const grpcexeUrl = "https://github.com/myadamtest/grpcexe.git"
-const grpcexeFilename = "grpcexe"
 
 func GrpcGenerate() {
 	err := generateBefore()
@@ -22,20 +20,49 @@ func GrpcGenerate() {
 		return
 	}
 
-	fd, err := ioutil.ReadDir("./protofile/")
+	fd, err := ioutil.ReadDir(protoBaseDir)
 	if err != nil {
 		logkit.Errorf("%s", err)
 		return
 	}
 
+	serviceList := make([]*RpcServiceInfo, 0)
 	// 生成grpc文件
 	for i := 0; i < len(fd); i++ {
 		if !fd[i].IsDir() && fileinfo.GetFileSuffix(fd[i].Name()) == ".proto" {
-			grpcGenerateByFilename("./protofile/" + fd[i].Name())
+			stru, _ := grpcGenerateByFilename(protoBaseDir + fd[i].Name())
+			if stru != nil && len(stru.Interfaces) > 0 {
+				serviceList = append(serviceList, stru)
+			}
 		}
 	}
 
+	//生成grpc启动文件
+	startTmpl, err := template.New("stp").Parse(grpcStartTemplate)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	startFd, err := os.OpenFile("./grpcservice/grpc_service.go", os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer startFd.Close()
+
+	thisProjectName, _ := utils.GetProjectName()
+	err = startTmpl.Execute(startFd, map[string]interface{}{"ProjectName": thisProjectName, "ServiceList": serviceList})
+	if err != nil {
+		fmt.Println(err)
+	}
+	//生成grpc启动文件 结束
+
 	err = utils.GoModDownload("")
+	if err != nil {
+		fmt.Println("gen grpc fail!", err)
+		return
+	}
+	fmt.Println(fmt.Sprintf("success gen grpc file"))
 }
 
 func generateBefore() error {
@@ -56,13 +83,13 @@ func generateBefore() error {
 	return cloneMustExeFile()
 }
 
-func grpcGenerateByFilename(fileName string) {
+func grpcGenerateByFilename(fileName string) (*RpcServiceInfo, error) {
 	simplyName := fileinfo.GetFileSimpleName(fileName)
 
 	err := os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s/", simplyName), os.ModePerm)
 	if err != nil {
 		logkit.Errorf("%s", err)
-		return
+		return nil, err
 	}
 
 	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/%s/", simplyName), "--proto_path=./protofile/", fileName)
@@ -71,7 +98,54 @@ func grpcGenerateByFilename(fileName string) {
 	err = cmd.Run()
 	if err != nil {
 		fmt.Println(err)
+		return nil, err
+	}
+
+	stru, err := GetProtoStruct(fileName)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	generateImplement(fileName, stru)
+	return stru, nil
+}
+
+// 生成实现模板
+func generateImplement(fileName string, stru *RpcServiceInfo) {
+	if stru == nil || len(stru.Interfaces) == 0 {
 		return
+	}
+
+	targetFileName := fmt.Sprintf("./grpcservice/%s.go", stru.FileName)
+
+	_, err := os.Stat(targetFileName)
+	if os.IsExist(err) {
+		fmt.Println(err)
+		return
+	}
+
+	tp := methodTemplate
+	if os.IsNotExist(err) {
+		tp = commonTemplate
+	}
+
+	tmpl, err := template.New("tp").Parse(tp)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fd, err := os.OpenFile(targetFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer fd.Close()
+
+	err = tmpl.Execute(fd, stru)
+	if err != nil {
+		fmt.Println(err)
 	}
 }
 
