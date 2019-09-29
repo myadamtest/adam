@@ -1,4 +1,4 @@
-module adam
+module github.com/myadamtest/adam
 
 go 1.12
 
