@@ -1,0 +1,1002 @@
+syntax = "proto3";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "result_code.proto";
+
+package adam;
+
+
+enum OrganizationType {
+  GUILD = 0; // 公会
+  TEAM = 1; // 队伍
+  SCENE_TEAM = 2; //场景队伍
+}
+
+enum OrganizationJoinCondition {
+  EVERYONE = 0;
+  APPLY = 1;
+}
+
+enum OrganizationMemberTitle {
+  NORMAL_MEMBER = 0; //普通成员
+  ELITE_MEMBER = 30; //精英成员
+  OFFICIAL = 60;  //官员
+  CHAIRMAN = 100;  //会长
+}
+
+message vec3 {
+  float x = 1; //
+  float y = 2;
+  float z = 3;
+}
+
+message PositionInfo {
+  string map_id = 1; // 地图 id
+  vec3 position = 2; // 坐标
+}
+
+message PlayerInfo {
+  string player_id = 1;
+  string name = 2;
+  PositionInfo position = 3;
+  bool online = 4;
+  uint32 level = 5;
+  uint32 dan_level = 6;
+  string server_id = 7;
+  int32 is_alive = 8; // 存活状态
+  int32 tid =9;
+}
+
+message PlayerIndexInfo {
+  string server_id = 1;
+  string player_id = 2;
+}
+
+message CardInfo {
+  string card_id = 1; // 名片id
+  PlayerInfo player = 2; // 名片关联的玩家信息
+}
+
+message CreatePlayerRequest {
+  string player_id = 1; // 玩家唯一id
+  string nick_name = 2; // 昵称
+  PositionInfo position = 3; // 位置信息
+  bool online = 4; // 是否在线
+  google.protobuf.Any info = 5; // 一些其他信息
+  uint32 level = 6;
+  string server_id = 7; //服务器id
+  int32 tid =8;
+}
+
+message CreatePlayerResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    string card_id = 1; // 每张玩家名片，都会有一个全局唯一 id
+  }
+  oneof Result {
+    FailedResult error = 1; //失败结果
+    SuccessResult success = 2; //成功结果
+  }
+}
+
+message GetPlayerCardInfoRequest {
+  oneof Filter {
+    PlayerIndexInfo player = 1; // 玩家id
+    string card_id = 2; // 名片id
+  }
+}
+
+message GetPlayerCardInfoResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    CardInfo card = 1; // 每张玩家名片，都会有一个全局唯一 id
+  }
+  oneof Result {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+
+message DeletePlayerCardRequest {
+  oneof Info {
+    string card_id = 1; // 玩家的名片id
+    PlayerIndexInfo player = 2; //角色信息
+  }
+}
+
+message DeletePlayerCardResponse {
+  adam.ResultCode result = 1;
+}
+
+message ModifyPlayerCardInfoRequest {
+  message Item {
+    oneof Field {
+      string nick_name = 1; // 昵称
+      PositionInfo position = 2; // 位置信息
+      bool online = 3; // 是否在线
+      google.protobuf.Any info = 4; // 一些其他信息
+      uint32 level = 5;
+      int32 is_alive = 6; //用户副本存活状态。
+    }
+  }
+
+  string card_id = 1; // 名片id
+  repeated Item items = 2;
+}
+
+message ModifyPlayerCardInfoResponse {
+  adam.ResultCode result = 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message RosterItem {
+  enum Relation {
+    LIKE = 0; // 喜欢， 粉
+    HATE = 1; // 憎恨， 拉黑
+  }
+
+  string card_id = 1;
+  string player_id = 2;
+  Relation relation = 3;
+  int64 add_time = 4;
+  PlayerInfo infos = 5;
+}
+
+message RosterItems {
+  string card_id = 1;
+  repeated RosterItem items = 2;
+}
+
+message LatelyPlayer {
+  repeated string card_id = 1;
+}
+
+message AddPlayerToRosterRequest {
+  string card_id = 1; //操作者名片
+  RosterItem item = 2; //要添加的名单条目
+}
+
+message AddPlayerToRosterResponse {
+  adam.ResultCode result = 1; // 添加结果
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message DeletePlayerFromRosterRequest {
+  string card_id = 1; // 操作者名片id
+  string target_id = 2; // 要删除的名片id
+}
+
+message DeletePlayerFromRosterResponse {
+  adam.ResultCode result = 1; // 删除的结果
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetPlayerRosterRequest {
+  string card_id = 1; // 使用 名片id 获取名单
+}
+
+message GetPlayerRosterResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    RosterItems items = 1; // 名单条目列表
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// 获取玩家和目标玩家的好友状态
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetPlayerWithTargetRosterRequest {
+  string card_id = 1; // 使用 名片id 获取名单
+  string target_id = 2; // 目标玩家Id
+}
+
+message GetPlayerWithTargetRosterResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    RosterItem self_roster = 1; // 玩家自己的记录
+    RosterItem target_roster = 2; // 目标玩家的记录
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message ModifyPlayerRosterRequest {
+  string card_id = 1; // 使用 名片id 修改名单条目
+  RosterItem item = 2; // 要修改成什么样子
+}
+
+message ModifyPlayerRosterResponse {
+  adam.ResultCode result = 1; // 修改的结果
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetPlayerLikedRequest {
+  string card_id = 1;
+}
+
+message GetPlayerLikedResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    repeated string cards = 1; // 喜欢我的名片id
+  }
+
+  oneof Field {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message OrganizationInfo {
+  string organization_id = 1; // 组织id
+  string creator_card_id = 2; // 创建者名片id
+  string name = 3; // 组织名称
+  OrganizationType type = 4; // 组织类型
+  uint32 level = 5; //组织等级
+  uint32 size = 6; // 组织规模，人员数量上限
+  uint64 exp = 7; //经验
+  uint32 activeness = 8; //活跃度
+  uint32 coins = 9; //货币
+  string language = 10; //语言
+  string notice = 11; //公告
+  OrganizationJoinCondition join_condition = 12;
+  repeated OrganizationMemberItem memberinfo = 13;
+}
+
+message CreateOrganizationRequest {
+  string creator_card_id = 1; // 创建者名片id
+  string name = 2; // 组织名称
+  OrganizationType type = 3; // 组织类型
+  uint32 size = 4; // 组织规模，人员数量上限
+}
+
+message CreateOrganizationResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    string organization_id = 1; // 组织唯一id
+    OrganizationType type = 2;
+  }
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message ModifyOrgnizationRequest {
+  message Item {
+    oneof Field {
+      string name = 1; // 组织名称
+      uint32 size = 2; // 组织规模，人员数量上限
+      OrganizationJoinCondition join_condition = 3;
+    }
+  }
+
+  string organization_id = 1;
+  repeated Item items = 2; //修改的项
+}
+
+message ModifyOrgnizationResponse {
+  adam.ResultCode result = 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message DeleteOrganizationRequest {
+  string organization_id = 1; // 组织id
+}
+
+message DeleteOrganizationResponse {
+  adam.ResultCode result = 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetOrganizationInfoRequest {
+  string organization_id = 1; // 组织id
+}
+
+message GetOrganizationInfoResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    OrganizationInfo organization_info = 1; // 组织唯一id
+  }
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetOrganizationMembersRequest {
+  string organization_id = 1; // 组织id
+}
+
+message OrganizationMemberItem {
+  string card_id = 1; // 成员的名片id
+  string player_id = 2; //成员的player_id
+  OrganizationMemberTitle title = 3; // 职位
+  uint32 level = 4; // 等级
+  uint32 coins = 5; // 公会货币
+  uint64 exp = 6; // 经验
+  google.protobuf.Timestamp join_time = 7;  // 加入时间
+  PlayerInfo playerinfo = 8; // 名片关联的玩家信息
+}
+
+message OrganizationMemberItems {
+  repeated OrganizationMemberItem items = 1;
+}
+
+message GetOrganizationMembersResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    OrganizationMemberItems item = 1; // 成员列表
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message JoinOrganizationRequest {
+  string organization_id = 1; // 申请加入的组织id
+  string card_id = 2; // 申请者的card_id
+}
+
+message JoinOrganizationResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    OrganizationMemberItems item = 1; // 成员列表
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message InviteToJoinOrganizationRequest {
+  string intvite_card_id = 1;         // 邀请者的card_id
+  string intvited_card_id = 2;         // 被邀请者的card_id
+  OrganizationType type = 3;            // 组织类型
+}
+
+message InviteToJoinOrganizationResponse {
+
+}
+
+message AcceptToJoinOrganizationRequest {
+  string intvite_card_id = 1;          // 邀请者的card_id
+  string intvited_card_id = 2;         // 被邀请者的card_id
+}
+
+message AcceptToJoinOrganizationResponse {
+  adam.ResultCode result = 1;   // 邀请结果
+  string acccet_playerid = 2;  // 同意 邀请者的id
+  string acccet_cardid = 3;    // 同意 邀请者的cardid
+  string organization_id = 4;   // 创建的组织id
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+enum SubscribeTopic {
+  CARD_INFO = 0; //名片信息变化
+  ONLINE = 1; //在线变化
+  ORGANIZATION_INFO = 2; //组织信息变化
+  ORGANIZATION_MEMBER = 3; //组织成员变化
+  LIKED = 4; //被人喜欢
+  ROSTER_INFO = 5; //名单信息变化
+  ITEM_RECEIVE_LOG_DEL = 6; //道具接收log删除
+}
+
+message SubscribeRequest {
+  SubscribeTopic topic = 1;
+  oneof Subscribe {
+    string card_id = 2;
+    string organiztion_id = 3;
+  }
+}
+
+message SubscribeResponse {
+  message ChangeOnline {
+    string card_id = 1;
+    bool online = 2;
+  }
+
+  message Delete {
+    string card_id = 1;
+    string organiztion_id = 2;
+  }
+
+  message ChangeCard {
+    oneof UpdateOrDelete {
+      CardInfo update = 1;
+      Delete delete = 2;
+    }
+  }
+
+  message ChangeOrganization {
+    oneof UpdateOrDelete {
+      OrganizationInfo update = 1;
+      Delete delete = 2;
+    }
+  }
+
+  message ChangeOrganizationMember {
+    string organiztion_id = 1;
+    oneof UpdateOrDelete {
+      OrganizationMemberItem join = 2;
+      OrganizationMemberItem update = 3;
+      Delete delete = 4;
+    }
+  }
+
+  message ChangeLiked {
+    oneof AddOrDelete {
+      string add = 1;
+      string delete = 2;
+    }
+  }
+
+  message DeleteItemReceiveLog {
+    string log_id = 1;
+  }
+
+  SubscribeTopic topic = 1;
+  oneof Result {
+    ChangeCard card_info = 2;
+    ChangeOnline online = 3;
+    ChangeOrganization organization_info = 4;
+    ChangeOrganizationMember organization_member = 5;
+    ChangeLiked liked = 6;
+    RosterItem update_item = 7;
+    DeleteItemReceiveLog delete_item = 8;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message ModifyOrgnizationMemberRequest {
+  message Item {
+    oneof Field {
+      OrganizationMemberTitle title = 1; // 职位
+      google.protobuf.Any info = 2; // 一些其他信息
+    }
+  }
+
+  string organization_id = 1;
+  oneof Target {
+    string card_id = 2;
+    PlayerIndexInfo player = 3;
+  }
+  repeated Item items = 4; //修改的项
+}
+
+message ModifyOrgnizationMemberResponse {
+  adam.ResultCode result = 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message DeleteOrgnizationMemberRequest {
+  string organization_id = 1; //组织id
+  string card_id = 2; //名片id
+}
+
+message DeleteOrgnizationMemberResponse {
+  adam.ResultCode result = 1;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetOrganizationApplyListRequest {
+  string organization_id = 1;
+}
+
+message GetOrganizationApplyListResponse {
+  repeated CardInfo cards = 2;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message AcceptOrganizationApplyRequest {
+  string organization_id = 1;
+  string card_id = 2;
+}
+
+message AcceptOrganizationApplyResponse {
+  adam.ResultCode result = 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+message GetPlayerOrganizationsRequest {
+  string card_id = 1;
+}
+
+message OrganizationItems {
+  message OrganizationItem {
+    string organization_id = 1;
+    OrganizationType organization_type = 2;
+  }
+
+  string card_id = 1;
+  repeated OrganizationItem items = 2;
+}
+
+message GetPlayerOrganizationsResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    OrganizationItems items = 1;
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+message EditOrgNoticeRequest{
+  string card_id = 1; //会长id
+  string organization_id = 2; //组织ID
+  string notice = 3; //公告内容
+}
+
+message EditOrgNoticeResponse{
+  adam.ResultCode result = 1;
+}
+
+message gainExpRequest{
+  string organization_id = 1; //组织ID
+  uint32 exp = 2; //获得的经验
+}
+
+message gainExpResponse{
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    uint32 level = 1; //新的等级
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+message OpenOrgActivityRequest{
+  string card_id = 1;
+  string organization_id = 2;
+  uint32 activity_id = 3; //活动ID
+}
+
+message OpenOrgActivityResponse{
+  adam.ResultCode result = 1;
+}
+
+message ChangeCommunicateLanguageRequest{
+  string card_id = 1;
+  string organization_id = 2;
+  string language = 3; //新语言
+}
+
+message ChangeCommunicateLanguageResponse{
+  adam.ResultCode result = 1;
+}
+
+message DisbandOrganizationRequest {
+  string card_id = 1; //操作者ID
+  string organization_id = 2;
+}
+
+message DisbandOrganizationResponse {
+  adam.ResultCode result = 1;
+}
+
+message CreateSceneTeamRequest {
+  string creator_card_id = 1; // 创建者名片id
+  string team_id = 2; //创建者所在队伍id
+  uint32 size = 3; // 组织规模，人员数量上限
+  uint32 scene_id = 4; //场景id
+}
+
+message CreateSceneTeamResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+  message SuccessResult {
+    string organization_id = 1; // 组织唯一id
+    OrganizationType type = 2;
+  }
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+/////////////////////////////////////////////////////////////////
+// 道具领取记录
+message ItemReceiveLog {
+  string log_id = 1;
+  uint32 item_id = 2; // 游戏服道具Id
+  uint32 item_num = 3; // 道具数量
+  string card_id = 4;
+  google.protobuf.Timestamp receive_time = 5; //收到时间 newadd
+}
+
+// 添加道具记录
+message AddItemReceiveLogRequest {
+  uint32 item_id = 1;
+  string card_id = 2;
+  uint32 item_num = 3; // 道具数量
+  google.protobuf.Timestamp receive_time = 4; //收到时间 newadd
+}
+
+message AddItemReceiveLogResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    ItemReceiveLog item_receive_log = 1; // 生成的道具领取记录
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+//分页获取道具领取列表。
+message GetItemReceiveLogListRequest {
+  string card_id = 1; // 角色id
+}
+
+message GetItemReceiveLogListResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    repeated ItemReceiveLog item_receive_list = 1; //道具领取列表
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+
+//根据ID删除道具领取记录
+message DeleteItemReceiveLogRequest {
+  string card_id = 1; // 角色id
+  repeated string log_id = 2; // 日志ID
+}
+
+message DeleteItemReceiveLogResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    repeated string log_id = 1; // 日志ID
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+//全部删除道具领取记录
+message DeleteAllItemReceiveLogRequest {
+  string card_id = 1; // 角色id
+}
+
+message DeleteAllItemReceiveLogResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    repeated string log_id = 1; // 日志ID
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+/////////////////////////////////////////////////////////////////
+//获取最近玩的人
+message GetPlayerLatelyRequest {
+  string card_id = 1; // 使用 名片id 获取名单
+}
+
+message GetPlayerLatelyResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    LatelyPlayer items = 1; // 名单条目列表
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+/////////////////////////////////////////////////////////////////
+// 添加最近联系人
+
+enum LatelyEvent {
+  TEAM_EVENT = 0; //组队
+  CHAT_EVENT = 1; //聊天
+}
+
+message AddPlayerLatelyRequest {
+  string card_id = 1; // 使用 名片id 获取名单
+  string target_id = 2; // 对方Id
+  LatelyEvent event = 3; // 事件类型，1组队，2聊天
+}
+
+message AddPlayerLatelyResponse {
+  message FailedResult {
+    adam.ResultCode code = 1;
+    map<string, string> params = 2;
+  };
+
+  message SuccessResult {
+    bool success = 1; // 名单条目列表
+  }
+
+  oneof GetResult {
+    FailedResult error = 1;
+    SuccessResult success = 2;
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////// rpc sa
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+service SocialRelationsService {
+  /* what: 订阅消息，可订阅SubscribeTopic中的定义的数据信息变化，在该类数据变化时主动通知所有的订阅者
+   * when: 可在游戏启动时进行相关订阅，也可以在游戏过程中按需要进行订阅
+   */
+  rpc Subscribe (stream SubscribeRequest) returns (stream SubscribeResponse);
+
+  /* what: 创建游戏中角色对应在微服务中的名片信息
+   * when: 当游戏中创建一个新角色时需调用此接口
+   */
+  rpc CreatePlayerCard (CreatePlayerRequest) returns (CreatePlayerResponse);
+  /* what: 获取角色名片信息
+   * when: 需要获取角色名片信息时调用
+   */
+  rpc GetPlayerCardInfo (GetPlayerCardInfoRequest) returns (GetPlayerCardInfoResponse);
+  /* what: 删除角色名片
+   * when: 当游戏中删除角色时调用。
+   */
+  rpc DeletePlayerCard (DeletePlayerCardRequest) returns (DeletePlayerCardResponse);
+  /* what: 修改角色名片信息
+   * when: 当游戏中角色的信息发生变化，且该信息在微服务中有记录时，应调用此接口。
+   */
+  rpc ModifyPlayerCardInfo (ModifyPlayerCardInfoRequest) returns (ModifyPlayerCardInfoResponse);
+
+  /* what: 添加角色到调用者的名单列表
+   * when: 当增加一名角色到自己的好友列表，或增加一名角色到自己的黑名单列表时调用。
+   */
+  rpc AddPlayerToRoster (AddPlayerToRosterRequest) returns (AddPlayerToRosterResponse);
+  /* what: 从名单列表删除角色
+   * when: 当将一个名角色从自己的好友列表或黑名单列表移除时调用。
+   */
+  rpc DeletePlayerFromRoster (DeletePlayerFromRosterRequest) returns (DeletePlayerFromRosterResponse);
+  /* what: 获取整个名单列表
+   * when: 当需要获取某个角色的整个好友列表、黑名单列表时调用。
+   */
+  rpc GetPlayerRoster (GetPlayerRosterRequest) returns (GetPlayerRosterResponse);
+
+  /* what: 获取玩家和目标玩家的关系
+   * when: 需要知道玩家和目标玩家关系时调用
+   */
+  rpc GetPlayerWithTargetRoster (GetPlayerWithTargetRosterRequest) returns (GetPlayerWithTargetRosterResponse);
+  /* what: 修改名单列表中条目的信息
+   * when:
+   */
+  rpc ModifyPlayerRosterInfo (ModifyPlayerRosterRequest) returns (ModifyPlayerRosterResponse);
+  /* what: 获取player被谁添加为好友
+   * when: 当好友列表或黑名单列表中的条目信息发生变化时调用。
+   */
+  rpc GetPlayerLiked (GetPlayerLikedRequest) returns (GetPlayerLikedResponse);
+
+  /* what: 创建一个社会组织
+   * when: 当游戏中需要创建一个公会、队伍时调用。
+   */
+  rpc CreateOrganization (CreateOrganizationRequest) returns (CreateOrganizationResponse);
+  /* what: 修改组织信息
+   * when: 当组织信息发生变化时调用，以更新微服务中缓存的组织信息。
+   */
+  rpc ModifyOrgnization (ModifyOrgnizationRequest) returns (ModifyOrgnizationResponse);
+  /* what: 删除一个社会组织
+   * when: 当需要删除一个组织时调用，此接口没有操作者的权限验证。
+   */
+  rpc DeleteOrganization (DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+  /* what: 获取一个社会组织的信息
+   * when: 当需要获取一个组织的信息时调用
+   */
+  rpc GetOrganizationInfo (GetOrganizationInfoRequest) returns (GetOrganizationInfoResponse);
+  /* what: 获取社会组织成员列表
+   * when: 当需要获取组织的成员列表时调用
+   */
+  rpc GetOrganizationMembers (GetOrganizationMembersRequest) returns (GetOrganizationMembersResponse);
+  /* what: 申请加入一个社会组织，可能会需要批准，并不能立即被加入到组织中（由该组织的加入条件决定）
+   * when: 申请加一个组织时调用，在未加入该类组织之前，可申请不同的组织
+   */
+  rpc JoinOrganization (JoinOrganizationRequest) returns (JoinOrganizationResponse);
+  /* what: 由组织发起邀请，邀请某个player加入该社会组织。 并不需要再进行审批。
+   * when: 当组织的管理者需要邀请某个角色加入时调用，需对方同意方可加入。
+   */
+  rpc InviteToJoinOrganization (InviteToJoinOrganizationRequest) returns (InviteToJoinOrganizationResponse);
+  /* what: 修改组织成员信息
+   * when: 当需要修改成员的职称等信息时调用
+   */
+  rpc ModifyOrgnizationMember (ModifyOrgnizationMemberRequest) returns (ModifyOrgnizationMemberResponse);
+  /* what: 删除组织成员
+   * when: 删除组织中的成员时调用
+   */
+  rpc DeleteOrgnizationMember (DeleteOrgnizationMemberRequest) returns (DeleteOrgnizationMemberResponse);
+  /* what: 获取组织申请列表
+   * when: 组织的管理员查看申请列表时调用
+   */
+  rpc GetOrganizationApplyList (GetOrganizationApplyListRequest) returns (GetOrganizationApplyListResponse);
+  /* what: 组织申请审核通过
+   * when: 组织的管理员同意某个角色的加入申请时调用
+   */
+  rpc AcceptOrganizationApply (AcceptOrganizationApplyRequest) returns (AcceptOrganizationApplyResponse);
+  /* what: 获取玩家的组织
+   * when: 获取角色所加入的组织的信息时调用
+   */
+  rpc GetPlayerOrganizations (GetPlayerOrganizationsRequest) returns (GetPlayerOrganizationsResponse);
+  /* what: 编辑公告
+   * when: 会长编辑组织的公告时调用
+   */
+  rpc EditOrgNotice (EditOrgNoticeRequest) returns (EditOrgNoticeResponse);
+  /* what: 获得公会经验
+   * when: 组织的成员完成相关玩法时获得
+   */
+  rpc gainExp (gainExpRequest) returns (gainExpResponse);
+  /* what: 开启组织中的玩法
+   * when: 组织的管理员开启一个组织玩法。
+   */
+  rpc OpenOrgActivity (OpenOrgActivityRequest) returns (OpenOrgActivityResponse);
+  /* what: 修改语言
+   * when: 组织的管理员修改组织的交流语言。
+   */
+  rpc ChangeCommunicateLanguage (ChangeCommunicateLanguageRequest) returns (ChangeCommunicateLanguageResponse);
+  /* what: 解散公会
+   * when: 会长解散一个不存在成员的组织（公会）。
+   */
+  rpc DisbandOrganization (DisbandOrganizationRequest) returns (DisbandOrganizationResponse);
+  /* what: 创建一个副本队伍
+   * when: 当游戏中需要创建一个与副本绑定的队伍时调用。
+   */
+  rpc CreateSceneTeam (CreateSceneTeamRequest) returns (CreateSceneTeamResponse);
+  /* what: 添加最近接触过的玩家
+   * when: 其他服务有相关玩家接触事件的时候使用
+   */
+  rpc AddLatelyPerson (AddPlayerLatelyRequest) returns (AddPlayerLatelyResponse);
+  /* what: 请求最近接触过的玩家
+   * when: 当客户端请求时调用
+   */
+  rpc GetLatelyPerson (GetPlayerLatelyRequest) returns (GetPlayerLatelyResponse);
+
+  /* what: 添加道具领取日志记录
+   * when: 领取道具时使用
+   */
+  rpc AddItemReceiveLog (AddItemReceiveLogRequest) returns (AddItemReceiveLogResponse);
+
+  /* what: 获取道具领取记录
+   * when:
+   */
+  rpc GetItemReceiveLogList (GetItemReceiveLogListRequest) returns (GetItemReceiveLogListResponse);
+
+  /* what: 根据ID删除玩家道具领取记录
+   * when:
+   */
+  rpc DeleteItemReceiveLog (DeleteItemReceiveLogRequest) returns (DeleteItemReceiveLogResponse);
+
+  /* what: 全部删除玩家道具领取记录
+   * when:
+   */
+  rpc DeleteAllItemReceiveLog (DeleteAllItemReceiveLogRequest) returns (DeleteAllItemReceiveLogResponse);
+
+  /* what: 同意某人的邀请
+   * when: 返回邀请信息 和 创建组织的id
+   */
+  rpc AcceptToJoinOrganization (AcceptToJoinOrganizationRequest) returns (AcceptToJoinOrganizationResponse);
+
+}
