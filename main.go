@@ -1,9 +1,9 @@
 package main
 
 import (
-	"adam/create"
-	"adam/generate"
 	"fmt"
+	"github.com/myadamtest/adam/create"
+	"github.com/myadamtest/adam/generate"
 	"os"
 )
 

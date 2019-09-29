@@ -1,9 +1,9 @@
 package create
 
 import (
-	"adam/utils"
 	"bytes"
 	"fmt"
+	"github.com/myadamtest/adam/utils"
 	"github.com/myadamtest/logkit"
 	"io/ioutil"
 	"os"

@@ -1,10 +1,10 @@
 package generate
 
 import (
-	"adam/utils"
 	"fmt"
 	"github.com/bookrun-go/fileutils/fileinfo"
 	"github.com/deckarep/golang-set"
+	"github.com/myadamtest/adam/utils"
 	"github.com/myadamtest/logkit"
 	"io"
 	"io/ioutil"
@@ -102,7 +102,7 @@ func grpcGenerateByFilename(fileName string) (*RpcServiceInfo, error) {
 		return nil, err
 	}
 	//simplyName := fileinfo.GetFileSimpleName(fileName)
-	projectName, _ := utils.GetProjectName()
+	//projectName, _ := utils.GetProjectName()
 
 	err = os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s/", stru.PackageName), os.ModePerm)
 	if err != nil {

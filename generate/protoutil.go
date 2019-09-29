@@ -1,9 +1,9 @@
 package generate
 
 import (
-	"adam/utils"
 	"bufio"
 	"github.com/bookrun-go/fileutils/fileinfo"
+	"github.com/myadamtest/adam/utils"
 	"io"
 	"os"
 	"regexp"
