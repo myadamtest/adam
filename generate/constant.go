@@ -9,7 +9,7 @@ const (
 package grpcservice
 
 import (
-	"{{.ProjectName}}/grpcservice/pb/{{.FileName}}"
+	"{{.ProjectName}}/grpcservice/pb/{{.PackageName}}"
 	"context"
 )
 
@@ -18,18 +18,18 @@ type {{.Name}}Impl struct {}
 {{range $k,$v :=.Interfaces}}
 	{{if eq $v.RequestParam.Ty 0}}
 		{{if eq $v.ResponseParam.Ty 0}}
-func (this *{{$.Name}}Impl) {{$v.Name}}(ctx context.Context,in *{{$.FileName}}.{{$v.RequestParam.Name}}) (*{{$.FileName}}.{{$v.ResponseParam.Name}}, error) {
+func (this *{{$.Name}}Impl) {{$v.Name}}(ctx context.Context,in *{{$.PackageName}}.{{$v.RequestParam.Name}}) (*{{$.PackageName}}.{{$v.ResponseParam.Name}}, error) {
 	panic("to implement")
 	return nil,nil
 }
 		{{else if eq $v.ResponseParam.Ty 1}}
-func (this *{{$.Name}}Impl) {{$v.Name}}(in *{{$.FileName}}.{{$v.RequestParam.Name}},st {{$.FileName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
+func (this *{{$.Name}}Impl) {{$v.Name}}(in *{{$.PackageName}}.{{$v.RequestParam.Name}},st {{$.PackageName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
 	panic("to implement")
 	return nil
 }
 		{{end}}
 	{{else}}
-func (this *{{$.Name}}Impl) {{$v.Name}}(st {{$.FileName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
+func (this *{{$.Name}}Impl) {{$v.Name}}(st {{$.PackageName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
 	panic("to implement")
 	return nil
 }
@@ -40,18 +40,18 @@ func (this *{{$.Name}}Impl) {{$v.Name}}(st {{$.FileName}}.{{$.Name}}_{{$v.Name}}
 {{range $k,$v :=.Interfaces}}
 	{{if eq $v.RequestParam.Ty 0}}
 		{{if eq $v.ResponseParam.Ty 0}}
-func (this *{{$.Name}}Impl) {{$v.Name}}(ctx context.Context,in *{{$.FileName}}.{{$v.RequestParam.Name}}) (*{{$.FileName}}.{{$v.ResponseParam.Name}}, error) {
+func (this *{{$.Name}}Impl) {{$v.Name}}(ctx context.Context,in *{{$.PackageName}}.{{$v.RequestParam.Name}}) (*{{$.PackageName}}.{{$v.ResponseParam.Name}}, error) {
 	panic("to implement")
 	return nil,nil
 }
 		{{else if eq $v.ResponseParam.Ty 1}}
-func (this *{{$.Name}}Impl) {{$v.Name}}(in *{{$.FileName}}.{{$v.RequestParam.Name}},st {{$.FileName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
+func (this *{{$.Name}}Impl) {{$v.Name}}(in *{{$.PackageName}}.{{$v.RequestParam.Name}},st {{$.PackageName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
 	panic("to implement")
 	return nil
 }
 		{{end}}
 	{{else}}
-func (this *{{$.Name}}Impl) {{$v.Name}}(st {{$.FileName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
+func (this *{{$.Name}}Impl) {{$v.Name}}(st {{$.PackageName}}.{{$.Name}}_{{$v.Name}}Server) (error) {
 	panic("to implement")
 	return nil
 }
@@ -69,15 +69,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"net"
-	{{range $k,$v :=.ServiceList}}
-	"{{$v.ProjectName}}/grpcservice/pb/{{$v.FileName}}"
+	{{range $k,$v :=.PackageList}}
+	{{$v}}
 	{{end}}
 )
 
 func StartGrpc() error {
 	s := grpc.NewServer()
 	{{range $k,$v :=.ServiceList}}
-	{{$v.FileName}}.Register{{$v.Name}}Server(s, &{{$v.Name}}Impl{})
+	{{$v.PackageName}}.Register{{$v.Name}}Server(s, &{{$v.Name}}Impl{})
 	{{end}}
 	//...
 

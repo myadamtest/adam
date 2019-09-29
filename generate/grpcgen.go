@@ -4,6 +4,7 @@ import (
 	"adam/utils"
 	"fmt"
 	"github.com/bookrun-go/fileutils/fileinfo"
+	"github.com/deckarep/golang-set"
 	"github.com/myadamtest/logkit"
 	"io"
 	"io/ioutil"
@@ -55,7 +56,14 @@ func GrpcGenerate() {
 	defer startFd.Close()
 
 	thisProjectName, _ := utils.GetProjectName()
-	err = startTmpl.Execute(startFd, map[string]interface{}{"ProjectName": thisProjectName, "ServiceList": serviceList})
+	//packageList := make([]string,0)
+	packageList := mapset.NewSet()
+	for i := 0; i < len(serviceList); i++ {
+		//"{{$v.ProjectName}}/grpcservice/pb/{{$v.PackageName}}"
+		packageList.Add(fmt.Sprintf("\"%s/grpcservice/pb/%s\"", serviceList[i].ProjectName, serviceList[i].PackageName))
+	}
+
+	err = startTmpl.Execute(startFd, map[string]interface{}{"ProjectName": thisProjectName, "ServiceList": serviceList, "PackageList": packageList.ToSlice()})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -88,26 +96,24 @@ func generateBefore() error {
 }
 
 func grpcGenerateByFilename(fileName string) (*RpcServiceInfo, error) {
+	stru, err := GetProtoStruct(fileName)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 	//simplyName := fileinfo.GetFileSimpleName(fileName)
 	projectName, _ := utils.GetProjectName()
 
-	err := os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s/", projectName), os.ModePerm)
+	err = os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s/", stru.PackageName), os.ModePerm)
 	if err != nil {
 		logkit.Errorf("%s", err)
 		return nil, err
 	}
 
-	fmt.Println(projectName)
-	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/%s/", projectName), "--proto_path=./protofile/", fileName)
+	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/%s", stru.PackageName), "--proto_path=./protofile/", fileName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	err = cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-
-	stru, err := GetProtoStruct(fileName)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err

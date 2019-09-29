@@ -25,6 +25,7 @@ type RpcServiceInfo struct {
 	Name        string
 	FileName    string
 	ProjectName string
+	PackageName string
 	Interfaces  []RpcServiceInterfaceInfo
 }
 
@@ -58,6 +59,15 @@ func GetProtoStruct(fp string) (*RpcServiceInfo, error) {
 
 		newLine := strings.Trim(lineStr, " ")
 
+		if strings.HasPrefix(newLine, "package ") {
+			newLine = deleteExtraSpace(newLine)
+			newLine = newLine[8:]
+
+			result := strings.Index(newLine, ";")
+			rpcServiceInfo.PackageName = strings.Trim(newLine[0:result], " ")
+			continue
+		}
+
 		if strings.HasPrefix(newLine, "service ") {
 			newLine = deleteExtraSpace(newLine)
 			newLine = newLine[8:]
@@ -68,6 +78,7 @@ func GetProtoStruct(fp string) (*RpcServiceInfo, error) {
 			//
 			//fmt.Println("service name =",newLine[0:result])
 			rpcServiceInfo.Name = newLine[0:result]
+			continue
 		}
 
 		if strings.HasPrefix(newLine, "rpc ") {
@@ -115,6 +126,7 @@ func GetProtoStruct(fp string) (*RpcServiceInfo, error) {
 			iInfo.ResponseParam = respParam
 
 			rpcServiceInfo.Interfaces = append(rpcServiceInfo.Interfaces, iInfo)
+			continue
 		}
 	}
 	return &rpcServiceInfo, nil
