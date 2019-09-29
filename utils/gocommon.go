@@ -20,6 +20,15 @@ func GoModDownload(dir string) error {
 	return cmd.Run()
 }
 
+func GoModTidy(dir string) error {
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Stderr = os.Stdout
+	if dir != "" {
+		cmd.Dir = fmt.Sprintf("./%s", dir)
+	}
+	return cmd.Run()
+}
+
 func GetProjectName() (string, error) {
 	b, err := ioutil.ReadFile("./go.mod")
 	if err != nil {

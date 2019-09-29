@@ -30,7 +30,11 @@ func GrpcGenerate() {
 	// 生成grpc文件
 	for i := 0; i < len(fd); i++ {
 		if !fd[i].IsDir() && fileinfo.GetFileSuffix(fd[i].Name()) == ".proto" {
-			stru, _ := grpcGenerateByFilename(protoBaseDir + fd[i].Name())
+			stru, err := grpcGenerateByFilename(protoBaseDir + fd[i].Name())
+			if err != nil {
+				logkit.Errorf("generate[%s] code fail", fd[i].Name())
+				return
+			}
 			if stru != nil && len(stru.Interfaces) > 0 {
 				serviceList = append(serviceList, stru)
 			}
@@ -57,7 +61,7 @@ func GrpcGenerate() {
 	}
 	//生成grpc启动文件 结束
 
-	err = utils.GoModDownload("")
+	err = utils.GoModTidy("")
 	if err != nil {
 		fmt.Println("gen grpc fail!", err)
 		return
@@ -84,15 +88,17 @@ func generateBefore() error {
 }
 
 func grpcGenerateByFilename(fileName string) (*RpcServiceInfo, error) {
-	simplyName := fileinfo.GetFileSimpleName(fileName)
+	//simplyName := fileinfo.GetFileSimpleName(fileName)
+	projectName, _ := utils.GetProjectName()
 
-	err := os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s/", simplyName), os.ModePerm)
+	err := os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s/", projectName), os.ModePerm)
 	if err != nil {
 		logkit.Errorf("%s", err)
 		return nil, err
 	}
 
-	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/%s/", simplyName), "--proto_path=./protofile/", fileName)
+	fmt.Println(projectName)
+	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/%s/", projectName), "--proto_path=./protofile/", fileName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	err = cmd.Run()
