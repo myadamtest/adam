@@ -6,3 +6,4 @@ nohup.out
 *.log
 *.retry
 .idea/
+go.sum
