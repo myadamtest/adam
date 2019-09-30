@@ -40,3 +40,11 @@ utils
     generate grpc file
     adam gen [grpc]
 ```
+
+### TODO
+
+```
+
+    support linux & mac
+    fix proto file read method.
+```
