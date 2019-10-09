@@ -49,6 +49,7 @@ func GrpcGenerate() {
 		fmt.Println(err)
 		return
 	}
+	_ = os.Remove("./grpcservice/grpc_service.go")
 	startFd, err := os.OpenFile("./grpcservice/grpc_service.go", os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println(err)
