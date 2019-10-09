@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"github.com/bookrun-go/fileutils/fileinfo"
+	"github.com/bookrun-go/parseutil/gofile"
 	"github.com/deckarep/golang-set"
 	"github.com/myadamtest/adam/utils"
 	"github.com/myadamtest/logkit"
@@ -119,12 +120,12 @@ func grpcGenerateByFilename(fileName string) (*RpcServiceInfo, error) {
 		return nil, err
 	}
 
-	generateImplement(fileName, stru)
+	generateImplement(stru)
 	return stru, nil
 }
 
 // 生成实现模板
-func generateImplement(fileName string, stru *RpcServiceInfo) {
+func generateImplement(stru *RpcServiceInfo) {
 	if stru == nil || len(stru.Interfaces) == 0 {
 		return
 	}
@@ -132,7 +133,7 @@ func generateImplement(fileName string, stru *RpcServiceInfo) {
 	targetFileName := fmt.Sprintf("./grpcservice/%s.go", stru.FileName)
 
 	_, err := os.Stat(targetFileName)
-	if os.IsExist(err) {
+	if !os.IsNotExist(err) && err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -140,6 +141,27 @@ func generateImplement(fileName string, stru *RpcServiceInfo) {
 	tp := methodTemplate
 	if os.IsNotExist(err) {
 		tp = commonTemplate
+	} else {
+		err = gofile.IParseFactory.DoByFile(targetFileName)
+		if err == nil { // 去重已经有的函数。
+			fs := gofile.IParseFactory.GetRootFunctions()
+			newInterface := make([]RpcServiceInterfaceInfo, 0)
+			for _, i := range stru.Interfaces {
+				tempI := &i
+				for _, f := range fs {
+					if i.Name == f.Name {
+						tempI = nil
+						break
+					}
+
+				}
+
+				if tempI != nil {
+					newInterface = append(newInterface, *tempI)
+				}
+			}
+			stru.Interfaces = newInterface
+		}
 	}
 
 	tmpl, err := template.New("tp").Parse(tp)
