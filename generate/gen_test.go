@@ -1,8 +1,8 @@
 package generate
 
 import (
-	"adam/utils"
 	"fmt"
+	"github.com/myadamtest/adam/utils"
 	"io/ioutil"
 	"runtime"
 	"testing"
