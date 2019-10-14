@@ -2,6 +2,7 @@ package generate
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/bookrun-go/fileutils/fileinfo"
 	"github.com/myadamtest/adam/utils"
 	"io"
@@ -111,6 +112,9 @@ func GetProtoStruct(fp string) (*RpcServiceInfo, error) {
 
 			iInfo.RequestParam = reqParam
 
+			if result+11 > len(newLine) {
+				fmt.Println(newLine, result)
+			}
 			newLine = newLine[result+11:]
 			result = strings.Index(newLine, ")")
 			respStr := strings.Trim(newLine[0:result], " ")

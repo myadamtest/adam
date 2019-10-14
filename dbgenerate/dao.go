@@ -85,24 +85,32 @@ func generateIDao(info *structInfo) error {
 }
 
 func executeTemplate(tpl, fullFilename string, info *structInfo, append bool) error {
+	return executeTemplateWithFuncs(tpl, fullFilename, info, append, nil)
+}
+
+func executeTemplateWithFuncs(tpl, fullFilename string, info *structInfo, append bool, funcs template.FuncMap) error {
 	flag := os.O_WRONLY | os.O_CREATE
 	if append {
 		flag = os.O_WRONLY | os.O_APPEND | os.O_CREATE
 	}
 
-	daoFd, err := os.OpenFile(fullFilename, flag, 0644)
+	fd, err := os.OpenFile(fullFilename, flag, 0644)
 	if err != nil {
 		return err
 	}
 
-	defer daoFd.Close()
+	defer fd.Close()
 
-	daoTemplate, err := template.New("").Parse(tpl)
+	templateObject := template.New("")
+	if funcs != nil {
+		templateObject = templateObject.Funcs(funcs)
+	}
+	templateObject, err = templateObject.Parse(tpl)
 	if err != nil {
 		return err
 	}
 
-	err = daoTemplate.Execute(daoFd, info)
+	err = templateObject.Execute(fd, info)
 	if err != nil {
 		return err
 	}
@@ -113,6 +121,7 @@ const daoTemplate = `
 package dao
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/myadamtest/gobase/logkit"
 	"{{.ProjectName}}/entity"
@@ -159,6 +168,9 @@ func (dao *{{.PrivateName}}Dao) Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.
 }
 
 func (dao *{{.PrivateName}}Dao) Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error {
+	if isNil({{.PrimaryKey.PrivateName}}) {
+		return errors.New("delete param can't nil")
+	}
 	condition := &entity.{{.Name}}{
 		{{.PrimaryKey.Name}}:{{.PrimaryKey.PrivateName}},
 	}
@@ -241,5 +253,20 @@ import (
 func Init(addr string)  {
 	InitDbOrm(addr)
 
+}
+
+func isNil(p interface{}) bool {
+	if p == nil {
+		return true
+	}
+
+	switch p.(type) {
+	case string:
+		return p == ""
+	case int,int8,int16,int32,int64,float32,float64,uint,uint8,uint16,uint32,uint64:
+		return p == 0
+	default:
+		return false
+	}
 }
 `
