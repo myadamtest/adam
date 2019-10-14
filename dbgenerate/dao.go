@@ -148,10 +148,9 @@ func (dao *{{.PrivateName}}Dao) Update({{.PrivateName}} *entity.{{.Name}}) error
 	return nil
 }
 
-//fixme id int ,这个应该是动态的。
-func (dao *{{.PrivateName}}Dao) Query(id int) (*entity.{{.Name}},error)  {
+func (dao *{{.PrivateName}}Dao) Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) (*entity.{{.Name}},error)  {
 	result := &entity.{{.Name}}{}
-	err := dao.get{{.Name}}Db().Take(result,id).Error
+	err := dao.get{{.Name}}Db().Take(result,{{.PrimaryKey.PrivateName}}).Error
 	if err!=nil {
 		logkit.Errorf("get {{.PrivateName}} err:%s",err)
 		return nil,err
@@ -159,9 +158,11 @@ func (dao *{{.PrivateName}}Dao) Query(id int) (*entity.{{.Name}},error)  {
 	return result,nil
 }
 
-//fixme id int ,这个应该是动态的。
-func (dao *{{.PrivateName}}Dao) Delete(id int) error {
-	condition := &entity.{{.Name}}{Id:id}
+func (dao *{{.PrivateName}}Dao) Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error {
+	condition := &entity.{{.Name}}{
+		{{.PrimaryKey.Name}}:{{.PrimaryKey.PrivateName}},
+	}
+
 	err := dao.get{{.Name}}Db().Delete(condition).Error
 	if err!=nil {
 		logkit.Errorf("del {{.PrivateName}} err:%s",err)
@@ -221,8 +222,8 @@ const daoInterface = `
 type I{{.Name}}Dao interface {
 	Insert({{.PrivateName}} *entity.{{.Name}}) error
 	Update({{.PrivateName}} *entity.{{.Name}}) error
-	Query(id int) (*entity.{{.Name}},error)
-	Delete(id int) error
+	Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) (*entity.{{.Name}},error)
+	Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error
 	QueryList(filter entity.{{.Name}}) ([]*entity.{{.Name}},error)
 	QueryPage(q entity.{{.Name}}Query) (*entity.{{.Name}}Page,error)
 }

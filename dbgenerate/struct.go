@@ -12,13 +12,15 @@ type structInfo struct {
 	ProjectName string
 	PrivateName string
 	FieldInfos  []*structFieldInfo
+	PrimaryKey  *structFieldInfo //fixme 暂设假设只是单主键
 }
 
 type structFieldInfo struct {
-	Name    string
-	Tp      string
-	Tag     string
-	Comment string
+	Name        string
+	PrivateName string
+	Tp          string
+	Tag         string
+	Comment     string
 }
 
 // sql类型转换golang类型
@@ -39,7 +41,7 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 	si.PrivateName = strings.ToLower(si.Name[0:1]) + si.Name[1:]
 
 	//fixme 暂设
-	si.ProjectName = "github.com/myadamtest/kj/gengen/mygen"
+	si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
 
 	si.FieldInfos = make([]*structFieldInfo, len(info.Fields))
 	for i, f := range info.Fields {
@@ -55,6 +57,7 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 		si.FieldInfos[i] = sfi
 		sfi.Name = camelString(f.Field)
 		sfi.Name = strings.ToUpper(sfi.Name[0:1]) + sfi.Name[1:]
+		sfi.PrivateName = strings.ToLower(sfi.Name[0:1]) + sfi.Name[1:]
 		sfi.Tp = t
 		sfi.Comment = fmt.Sprintf("//%s", f.Comment)
 
@@ -66,6 +69,7 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 
 		if f.Key == "PRI" {
 			sfi.Tag = fmt.Sprintf("`json:\"%s\" gorm:\"primary_key\"`", camelString(f.Field))
+			si.PrimaryKey = sfi
 			continue
 		}
 	}
@@ -153,13 +157,13 @@ func ({{.Name}}) TableName() string {
 	return "{{.TableName}}"
 }
 
-// 分页查询条件
+// {{.Name}}分页查询条件
 type {{.Name}}Query struct {
 	{{.Name}}
 	Page
 }
 
-// 分页查询结果
+// {{.Name}}分页查询结果
 type {{.Name}}Page struct {
 	List []*{{.Name}} ` + "`" + `json:"list"` + "`" + `
 	Page

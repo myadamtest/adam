@@ -91,14 +91,12 @@ func (serv *{{.PrivateName}}Service) Update({{.PrivateName}} *entity.{{.Name}}) 
 	return dao.{{.Name}}Dao.Update({{.PrivateName}})
 }
 
-//fixme id int ,这个应该是动态的。
-func (serv *{{.PrivateName}}Service) Query(id int) (*entity.{{.Name}},error)  {
-	return dao.{{.Name}}Dao.Query(id)
+func (serv *{{.PrivateName}}Service) Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) (*entity.{{.Name}},error)  {
+	return dao.{{.Name}}Dao.Query({{.PrimaryKey.PrivateName}})
 }
 
-//fixme id int ,这个应该是动态的。
-func (serv *{{.PrivateName}}Service) Delete(id int) error {
-	return dao.{{.Name}}Dao.Delete(id)
+func (serv *{{.PrivateName}}Service) Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error {
+	return dao.{{.Name}}Dao.Delete({{.PrimaryKey.PrivateName}})
 }
 
 func (serv *{{.PrivateName}}Service) QueryList(filter entity.{{.Name}}) ([]*entity.{{.Name}},error) {
@@ -126,8 +124,8 @@ const serviceInterface = `
 type I{{.Name}}Service interface {
 	Insert({{.PrivateName}} *entity.{{.Name}}) error
 	Update({{.PrivateName}} *entity.{{.Name}}) error
-	Query(id int) (*entity.{{.Name}},error)
-	Delete(id int) error
+	Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) (*entity.{{.Name}},error)
+	Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error
 	QueryList(filter entity.{{.Name}}) ([]*entity.{{.Name}},error)
 	QueryPage(q entity.{{.Name}}Query) (*entity.{{.Name}}Page,error)
 }
