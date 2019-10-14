@@ -1,4 +1,4 @@
-package mygen
+package dbgenerate
 
 import (
 	"fmt"
@@ -42,6 +42,7 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 
 	//fixme 暂设
 	si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
+	//si.ProjectName,_ = utils.GetProjectName()
 
 	si.FieldInfos = make([]*structFieldInfo, len(info.Fields))
 	for i, f := range info.Fields {

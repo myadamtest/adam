@@ -1,4 +1,4 @@
-package mygen
+package dbgenerate
 
 import (
 	"errors"
