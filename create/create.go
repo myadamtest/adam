@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/myadamtest/adam/utils"
-	"github.com/myadamtest/logkit"
+	"github.com/myadamtest/gobase/logkit"
 	"io/ioutil"
 	"os"
 	"os/exec"

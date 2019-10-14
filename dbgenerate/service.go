@@ -73,6 +73,7 @@ package service
 import (
 	"{{.ProjectName}}/dao"
 	"{{.ProjectName}}/entity"
+	"{{.ProjectName}}/grpcservice/pb/pb"
 )
 
 type {{.PrivateName}}Service struct {
@@ -103,7 +104,7 @@ func (serv *{{.PrivateName}}Service) QueryList(filter entity.{{.Name}}) ([]*enti
 	return dao.{{.Name}}Dao.QueryList(filter)
 }
 
-func (serv *{{.PrivateName}}Service) QueryPage(q entity.{{.Name}}Query) (*entity.{{.Name}}Page,error)  {
+func (serv *{{.PrivateName}}Service) QueryPage(q pb.{{.Name}}PageRequest) (*pb.{{.Name}}PageResponse,error)  {
 	return dao.{{.Name}}Dao.QueryPage(q)
 }
 `
@@ -113,6 +114,7 @@ package service
 
 import (
 	"{{.ProjectName}}/entity"
+	"{{.ProjectName}}/grpcservice/pb/pb"
 )
 
 func Init() {
@@ -127,7 +129,7 @@ type I{{.Name}}Service interface {
 	Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) (*entity.{{.Name}},error)
 	Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error
 	QueryList(filter entity.{{.Name}}) ([]*entity.{{.Name}},error)
-	QueryPage(q entity.{{.Name}}Query) (*entity.{{.Name}}Page,error)
+	QueryPage(q pb.{{.Name}}PageRequest) (*pb.{{.Name}}PageResponse,error)
 }
 
 var {{.Name}}Service I{{.Name}}Service

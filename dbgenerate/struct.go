@@ -2,6 +2,7 @@ package dbgenerate
 
 import (
 	"fmt"
+	"github.com/myadamtest/adam/utils"
 	"os"
 	"strings"
 )
@@ -25,7 +26,7 @@ type structFieldInfo struct {
 
 // sql类型转换golang类型
 var typeMap = map[string]string{
-	"int":       "int",
+	"int":       "int32",
 	"decimal":   "float64",
 	"varchar":   "string",
 	"timestamp": "string",
@@ -41,8 +42,8 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 	si.PrivateName = strings.ToLower(si.Name[0:1]) + si.Name[1:]
 
 	//fixme 暂设
-	si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
-	//si.ProjectName,_ = utils.GetProjectName()
+	//si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
+	si.ProjectName, _ = utils.GetProjectName()
 
 	si.FieldInfos = make([]*structFieldInfo, len(info.Fields))
 	for i, f := range info.Fields {
@@ -106,7 +107,7 @@ func generateStruct(info *structInfo) error {
 			return err
 		}
 
-		_, err = structFd.WriteString("package entity")
+		_, err = structFd.WriteString("package entity \nimport \"github.com/myadamtest/adam/grpcservice/pb/pb\"\n")
 		if err != nil {
 			structFd.Close()
 			return err
@@ -148,8 +149,7 @@ func camelString(s string) string {
 
 const structTemplate = `
 type {{.Name}} struct {
-			{{range $k,$v :=.FieldInfos}} {{$v.Name}}    {{$v.Tp}} {{$v.Tag}}  {{$v.Comment}} 
-			{{end}}
+			pb.{{.Name}}
 }
 `
 
@@ -157,23 +157,24 @@ const pageTemplate = `
 func ({{.Name}}) TableName() string {
 	return "{{.TableName}}"
 }
-
-// {{.Name}}分页查询条件
-type {{.Name}}Query struct {
-	{{.Name}}
-	Page
-}
-
-// {{.Name}}分页查询结果
-type {{.Name}}Page struct {
-	List []*{{.Name}} ` + "`" + `json:"list"` + "`" + `
-	Page
-}
 `
 
-const defaultPageTemplate = "package entity\n" +
-	"type Page struct {\n" +
-	"\tPageNo   int `json:\"pageNo\" binding:\"required\"`   // 当前页码\n" +
-	"\tPageSize int `json:\"pageSize\" binding:\"required\"` // 每页条数\n" +
-	"\tTotal    int `json:\"total\"`                       // 总条数\n" +
-	"}"
+//// {{.Name}}分页查询条件
+//type {{.Name}}Query struct {
+//	{{.Name}}
+//	Page
+//}
+//
+//// {{.Name}}分页查询结果
+//type {{.Name}}Page struct {
+//	List []*{{.Name}} ` + "`" + `json:"list"` + "`" + `
+//	Page
+//}
+
+const defaultPageTemplate = "package entity\n"
+
+//"type Page struct {\n" +
+//"\tPageNo   int `json:\"pageNo\" binding:\"required\"`   // 当前页码\n" +
+//"\tPageSize int `json:\"pageSize\" binding:\"required\"` // 每页条数\n" +
+//"\tTotal    int `json:\"total\"`                       // 总条数\n" +
+//"}"

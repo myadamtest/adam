@@ -124,6 +124,7 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/myadamtest/gobase/logkit"
+	"{{.ProjectName}}/grpcservice/pb/pb"
 	"{{.ProjectName}}/entity"
 )
 
@@ -172,7 +173,9 @@ func (dao *{{.PrivateName}}Dao) Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey
 		return errors.New("delete param can't nil")
 	}
 	condition := &entity.{{.Name}}{
-		{{.PrimaryKey.Name}}:{{.PrimaryKey.PrivateName}},
+		{{.Name}}:pb.{{.Name}}{
+			{{.PrimaryKey.Name}}:{{.PrimaryKey.PrivateName}},
+		},
 	}
 
 	err := dao.get{{.Name}}Db().Delete(condition).Error
@@ -193,18 +196,18 @@ func (dao *{{.PrivateName}}Dao) QueryList(filter entity.{{.Name}}) ([]*entity.{{
 	return result, nil
 }
 
-func (dao *{{.PrivateName}}Dao) QueryPage(q entity.{{.Name}}Query) (*entity.{{.Name}}Page,error)  {
-	page := &entity.{{.Name}}Page{}
+func (dao *{{.PrivateName}}Dao) QueryPage(q pb.{{.Name}}PageRequest) (* pb.{{.Name}}PageResponse,error)  {
+	page := &pb.{{.Name}}PageResponse{}
 	page.Page = q.Page
 
 	db := dao.get{{.Name}}Db().Where(q.{{.Name}})
-	err := db.Count(&page.Total).Error
+	err := db.Count(&page.Page.Total).Error
 	if err!= nil {
 		logkit.Errorf("get {{.PrivateName}} total err:%s",err)
 		return nil,err
 	}
 
-	err = db.Offset((page.PageNo -1) * page.PageSize).Limit(page.PageSize).Find(&page.List).Error
+	err = db.Offset((page.Page.PageNo -1) * page.Page.PageSize).Limit( page.Page.PageSize).Find(& page.{{.Name}}List).Error
 	if err!= nil {
 		logkit.Errorf("page query {{.PrivateName}} err:%s",err)
 		return nil,err
@@ -237,7 +240,7 @@ type I{{.Name}}Dao interface {
 	Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) (*entity.{{.Name}},error)
 	Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error
 	QueryList(filter entity.{{.Name}}) ([]*entity.{{.Name}},error)
-	QueryPage(q entity.{{.Name}}Query) (*entity.{{.Name}}Page,error)
+	QueryPage(q pb.{{.Name}}PageRequest) (*pb.{{.Name}}PageResponse,error)
 }
 
 var {{.Name}}Dao I{{.Name}}Dao
@@ -248,6 +251,7 @@ package dao
 
 import (
 	"{{.ProjectName}}/entity"
+	"{{.ProjectName}}/grpcservice/pb/pb"
 )
 
 func Init(addr string)  {

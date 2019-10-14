@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package pb;
+
+service Article {
+  // 增加数据
+  rpc Insert (Article) returns (Article) {}
+  // 修改数据
+  rpc Update(Article) returns (Article) {}
+  // 根据主键查询
+  rpc Query(PkParamRequest) returns (Article) {}
+  // 根据主键删除
+  rpc Delete(PkParamRequest) returns (Article) {}
+  // 根据条件查询
+  rpc QueryList(Article) returns (ArticleArray) {}
+  // 分页查询
+  rpc QueryPage(ArticlePageRequest) returns (ArticlePageResponse) {}
+}
+
+message PkParamRequest {
+
+}
+
+message Article {
+  float s = 1;
+}
+
+message ArticleArray {
+  repeated Article ArticleList = 1;
+}
+
+message ArticlePageRequest {
+  Page Page = 1;
+  Article Article = 2;
+}
+
+message ArticlePageResponse {
+  Page Page = 1;
+  repeated Article ArticleList = 2;
+}
+
+message Page {
+  int32 PageNo = 1;
+  int32 PageSize = 2;
+  int64 Total = 3;
+}

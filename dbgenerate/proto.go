@@ -3,6 +3,7 @@ package dbgenerate
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"text/template"
 )
@@ -12,6 +13,11 @@ func generaGrpc(info *structInfo) error {
 
 	err := os.Mkdir("./protofile", os.ModePerm)
 	if err != nil && !os.IsExist(err) {
+		return err
+	}
+
+	err = createCommonProto()
+	if err != nil {
 		return err
 	}
 
@@ -55,8 +61,24 @@ func type2Proto(tp string) string {
 	}
 }
 
+func createCommonProto() error {
+	filename := "./protofile/common.proto"
+	_, err := os.Stat(filename)
+	if err == nil {
+		return nil
+	}
+
+	if !os.IsNotExist(err) {
+		return nil
+	}
+
+	return ioutil.WriteFile(filename, []byte(commonProtoTemplate), 0644)
+}
+
 const protoTemplate = `
 syntax = "proto3";
+
+import "common.proto";
 
 package pb;
 
@@ -66,16 +88,16 @@ service {{.Name}}Service {
   // 修改数据
   rpc Update ({{.Name}}) returns ({{.Name}});
   // 根据主键查询
-  rpc Query (PkParamRequest) returns ({{.Name}});
+  rpc Query ({{.Name}}PkParamRequest) returns ({{.Name}});
   // 根据主键删除
-  rpc Delete (PkParamRequest) returns ({{.Name}});
+  rpc Delete ({{.Name}}PkParamRequest) returns ({{.Name}});
   // 根据条件查询
   rpc QueryList ({{.Name}}) returns ({{.Name}}Array);
   // 分页查询
   rpc QueryPage ({{.Name}}PageRequest) returns ({{.Name}}PageResponse);
 }
 
-message PkParamRequest {
+message {{.Name}}PkParamRequest {
   	{{if .PrimaryKey}} {{.PrimaryKey.Tp}} {{.PrimaryKey.Name}} = 1; {{.PrimaryKey.Comment}}
 	{{end}}
 }
@@ -98,6 +120,12 @@ message {{.Name}}PageResponse {
   Page Page = 1;
   repeated {{.Name}} {{.Name}}List = 2;
 }
+`
+
+const commonProtoTemplate = `
+syntax = "proto3";
+
+package pb;
 
 message Page {
   int32 PageNo = 1;

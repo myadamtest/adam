@@ -6,7 +6,7 @@ import (
 	"github.com/bookrun-go/parseutil/gofile"
 	"github.com/deckarep/golang-set"
 	"github.com/myadamtest/adam/utils"
-	"github.com/myadamtest/logkit"
+	"github.com/myadamtest/gobase/logkit"
 	"io"
 	"io/ioutil"
 	"os"
