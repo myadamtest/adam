@@ -2,6 +2,10 @@ package mygen
 
 import "fmt"
 
+var generateFuns = []func(*structInfo) error{
+	generateStruct, generateDao, generateIDao, generateService, generateIService,
+}
+
 func GenCode(addr string) error {
 	//创建数据库
 	sc, err := newSqlCli(addr)
@@ -27,29 +31,11 @@ func GenCode(addr string) error {
 		}
 		si := tableConversion2Struct(t)
 
-		err = generateStruct(si)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		err = generateDao(si)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		err = generateIDao(si)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		err = generateService(si)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		err = generateIService(si)
-		if err != nil {
-			fmt.Println(err)
+		for _, f := range generateFuns {
+			err = f(si)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 	return nil
