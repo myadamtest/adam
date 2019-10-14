@@ -1,9 +1,12 @@
 package dbgenerate
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/myadamtest/adam/generate"
+)
 
 var generateFuns = []func(*structInfo) error{
-	generateStruct, generateDao, generateIDao, generateService, generateIService,
+	generateStruct, generateDao, generateIDao, generateService, generateIService, generaGrpc,
 }
 
 func GenCode(addr string) error {
@@ -38,5 +41,8 @@ func GenCode(addr string) error {
 			}
 		}
 	}
+
+	generate.GrpcGenerate()
+
 	return nil
 }
