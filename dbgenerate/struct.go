@@ -2,6 +2,7 @@ package dbgenerate
 
 import (
 	"fmt"
+	"github.com/myadamtest/adam/utils"
 	"os"
 	"strings"
 )
@@ -18,6 +19,7 @@ type structInfo struct {
 type structFieldInfo struct {
 	Name        string
 	PrivateName string
+	ColumnName  string
 	Tp          string
 	Tag         string
 	Comment     string
@@ -29,6 +31,7 @@ var typeMap = map[string]string{
 	"decimal":   "float64",
 	"varchar":   "string",
 	"timestamp": "string",
+	"datetime":  "time.Time",
 }
 
 func tableConversion2Struct(info *tableInfo) *structInfo {
@@ -41,8 +44,8 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 	si.PrivateName = strings.ToLower(si.Name[0:1]) + si.Name[1:]
 
 	//fixme 暂设
-	si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
-	//si.ProjectName,_ = utils.GetProjectName()
+	//si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
+	si.ProjectName, _ = utils.GetProjectName()
 
 	si.FieldInfos = make([]*structFieldInfo, len(info.Fields))
 	for i, f := range info.Fields {
@@ -59,6 +62,7 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 		sfi.Name = camelString(f.Field)
 		sfi.Name = strings.ToUpper(sfi.Name[0:1]) + sfi.Name[1:]
 		sfi.PrivateName = strings.ToLower(sfi.Name[0:1]) + sfi.Name[1:]
+		sfi.ColumnName = f.Field
 		sfi.Tp = t
 		sfi.Comment = fmt.Sprintf("//%s", f.Comment)
 
@@ -106,7 +110,7 @@ func generateStruct(info *structInfo) error {
 			return err
 		}
 
-		_, err = structFd.WriteString("package entity")
+		_, err = structFd.WriteString("package entity\nimport \"time\"\n")
 		if err != nil {
 			structFd.Close()
 			return err

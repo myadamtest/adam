@@ -17,7 +17,7 @@ func generateDao(si *structInfo) error {
 
 	daoFilename := fmt.Sprintf("./dao/%s.go", si.TableName)
 
-	err = executeTemplate(daoTemplate, daoFilename, si, true)
+	err = executeTemplateWithFuncs(daoTemplate, daoFilename, si, true, template.FuncMap{"setNil": setNil})
 	if err != nil {
 		return err
 	}
@@ -85,34 +85,54 @@ func generateIDao(info *structInfo) error {
 }
 
 func executeTemplate(tpl, fullFilename string, info *structInfo, append bool) error {
+	return executeTemplateWithFuncs(tpl, fullFilename, info, append, nil)
+}
+
+func executeTemplateWithFuncs(tpl, fullFilename string, info *structInfo, append bool, funcs template.FuncMap) error {
 	flag := os.O_WRONLY | os.O_CREATE
 	if append {
 		flag = os.O_WRONLY | os.O_APPEND | os.O_CREATE
 	}
 
-	daoFd, err := os.OpenFile(fullFilename, flag, 0644)
+	fd, err := os.OpenFile(fullFilename, flag, 0644)
 	if err != nil {
 		return err
 	}
 
-	defer daoFd.Close()
+	defer fd.Close()
 
-	daoTemplate, err := template.New("").Parse(tpl)
+	templateObject := template.New("")
+	if funcs != nil {
+		templateObject = templateObject.Funcs(funcs)
+	}
+	templateObject, err = templateObject.Parse(tpl)
 	if err != nil {
 		return err
 	}
 
-	err = daoTemplate.Execute(daoFd, info)
+	err = templateObject.Execute(fd, info)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+func setNil(p string) string {
+	switch p {
+	case "string":
+		return ""
+	case "int", "int8", "int16", "int32", "int64", "float32", "float64", "uint", "uint8", "uint16", "uint32", "uint64":
+		return "0"
+	default:
+		return "nil"
+	}
+}
+
 const daoTemplate = `
 package dao
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/myadamtest/gobase/logkit"
 	"{{.ProjectName}}/entity"
@@ -140,7 +160,14 @@ func (dao *{{.PrivateName}}Dao) Insert({{.PrivateName}} *entity.{{.Name}}) error
 }
 
 func (dao *{{.PrivateName}}Dao) Update({{.PrivateName}} *entity.{{.Name}}) error  {
-	err := dao.get{{.Name}}Db().Update({{.PrivateName}}).Error
+	{{if .PrimaryKey}}if isNil({{.PrivateName}}.{{.PrimaryKey.Name}}) {
+		return errors.New("delete param can't nil")
+	}
+	{{end}}
+	np := {{.PrivateName}}.{{.PrimaryKey.Name}}
+	{{.PrivateName}}.{{.PrimaryKey.Name}} = {{setNil .PrimaryKey.Tp}}
+	err := dao.get{{.Name}}Db().Update({{.PrivateName}}).Where("{{.PrimaryKey.ColumnName}}=?",np).Error
+	{{.PrivateName}}.{{.PrimaryKey.Name}} = np
 	if err!=nil {
 		logkit.Errorf("update {{.PrivateName}} err:%s",err)
 		return err
@@ -159,6 +186,9 @@ func (dao *{{.PrivateName}}Dao) Query({{.PrimaryKey.PrivateName}} {{.PrimaryKey.
 }
 
 func (dao *{{.PrivateName}}Dao) Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey.Tp}}) error {
+	if isNil({{.PrimaryKey.PrivateName}}) {
+		return errors.New("delete param can't nil")
+	}
 	condition := &entity.{{.Name}}{
 		{{.PrimaryKey.Name}}:{{.PrimaryKey.PrivateName}},
 	}
@@ -173,7 +203,7 @@ func (dao *{{.PrivateName}}Dao) Delete({{.PrimaryKey.PrivateName}} {{.PrimaryKey
 
 func (dao *{{.PrivateName}}Dao) QueryList(filter entity.{{.Name}}) ([]*entity.{{.Name}},error) {
 	var result []*entity.{{.Name}}
-	err := dao.get{{.Name}}Db().Where(filter).Find(result).Error
+	err := dao.get{{.Name}}Db().Where(filter).Find(&result).Error
 	if err!=nil {
 		logkit.Errorf("query list {{.PrivateName}} err:%s",err)
 		return nil,err
@@ -215,6 +245,21 @@ func InitDbOrm(addr string)  {
 	}
 
 	baseDb = db
+}
+
+func isNil(p interface{}) bool {
+	if p == nil {
+		return true
+	}
+
+	switch p.(type) {
+	case string:
+		return p == ""
+	case int,int8,int16,int32,int64,float32,float64,uint,uint8,uint16,uint32,uint64:
+		return p == 0
+	default:
+		return false
+	}
 }
 `
 

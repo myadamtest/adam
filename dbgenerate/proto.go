@@ -56,6 +56,8 @@ func type2Proto(tp string) string {
 		return "int32"
 	case "float32", "float64":
 		return "float"
+	case "time.Time":
+		return "string"
 	default:
 		return tp
 	}
