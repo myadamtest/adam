@@ -60,19 +60,24 @@ syntax = "proto3";
 
 package pb;
 
-service {{.Name}} {
+service {{.Name}}Service {
   // 增加数据
   rpc Insert ({{.Name}}) returns ({{.Name}});
   // 修改数据
-  rpc Update({{.Name}}) returns ({{.Name}});
+  rpc Update ({{.Name}}) returns ({{.Name}});
   // 根据主键查询
-  rpc Query(int64) returns ({{.Name}});
+  rpc Query (PkParamRequest) returns ({{.Name}});
   // 根据主键删除
-  rpc Delete(int64) returns ({{.Name}});
+  rpc Delete (PkParamRequest) returns ({{.Name}});
   // 根据条件查询
-  rpc QueryList({{.Name}}) returns ({{.Name}}Array);
+  rpc QueryList ({{.Name}}) returns ({{.Name}}Array);
   // 分页查询
-  rpc QueryPage({{.Name}}PageRequest) returns ({{.Name}}PageResponse);
+  rpc QueryPage ({{.Name}}PageRequest) returns ({{.Name}}PageResponse);
+}
+
+message PkParamRequest {
+  	{{if .PrimaryKey}} {{.PrimaryKey.Tp}} {{.PrimaryKey.Name}} = 1; {{.PrimaryKey.Comment}}
+	{{end}}
 }
 
 message {{.Name}} {
