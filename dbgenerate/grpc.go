@@ -8,7 +8,6 @@ import (
 )
 
 func generateGrpcWithImpl(info *structInfo) error {
-	//fixme ugly
 	if !fileExist(fmt.Sprintf("./grpcservice/pb/%s/common.pb.go", info.SimpleProjectName)) {
 		_ = generatePb("common", info.SimpleProjectName)
 	}

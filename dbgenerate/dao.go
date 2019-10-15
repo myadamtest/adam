@@ -9,6 +9,11 @@ import (
 	"text/template"
 )
 
+const (
+	daoInitSplit  = "InitDbOrm(addr)"
+	daoContentFmt = "%sInitDbOrm(addr)\n\t%sDao = new%sDao()%s"
+)
+
 func generateDao(si *structInfo) error {
 	err := os.Mkdir("./dao", os.ModePerm)
 	if err != nil && !os.IsExist(err) {
@@ -63,13 +68,12 @@ func generateIDao(info *structInfo) error {
 		return err
 	}
 	content := string(b)
-	contentArr := strings.Split(content, "InitDbOrm(addr)")
+	contentArr := strings.Split(content, daoInitSplit)
 
 	if len(contentArr) != 2 {
 		return errors.New("unknown err")
 	}
-
-	content = contentArr[0] + "InitDbOrm(addr)\n\t" + info.Name + "Dao = new" + info.Name + "Dao()" + contentArr[1]
+	content = fmt.Sprintf(daoContentFmt, contentArr[0], info.Name, info.Name, contentArr[1])
 
 	err = ioutil.WriteFile(filename, []byte(content), 0644)
 	if err != nil {

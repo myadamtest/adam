@@ -45,8 +45,6 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 	si.Name = strings.ToUpper(si.Name[0:1]) + si.Name[1:]
 	si.PrivateName = strings.ToLower(si.Name[0:1]) + si.Name[1:]
 
-	//fixme 暂设
-	//si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
 	si.ProjectName, _ = utils.GetProjectName()
 	si.SimpleProjectName = fileinfo.GetFileSimpleName(si.ProjectName)
 

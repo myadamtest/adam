@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+const (
+	serviceInitSplit  = "func Init() {"
+	serviceContentFmt = "%s%s\n\t%sService = new%sService()%s"
+)
+
 func generateService(info *structInfo) error {
 	err := os.Mkdir("./service", os.ModePerm)
 	if err != nil && !os.IsExist(err) {
@@ -39,22 +44,18 @@ func generateIService(info *structInfo) error {
 		}
 	}
 
-	//fixme 这种符号需要规范化
-	splitStr := "func Init() {"
-
 	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
 	content := string(b)
-	contentArr := strings.Split(content, splitStr)
+	contentArr := strings.Split(content, serviceInitSplit)
 
 	if len(contentArr) != 2 {
 		return errors.New("unknown err")
 	}
 
-	content = contentArr[0] + splitStr + "\n\t" + info.Name + "Service = new" + info.Name + "Service()" + contentArr[1]
-
+	content = fmt.Sprintf(serviceContentFmt, contentArr[0], serviceInitSplit, info.Name, info.Name, contentArr[1])
 	err = ioutil.WriteFile(filename, []byte(content), 0644)
 	if err != nil {
 		return err
