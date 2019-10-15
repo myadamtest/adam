@@ -2,6 +2,7 @@ package dbgenerate
 
 import (
 	"fmt"
+	"github.com/myadamtest/adam/generate"
 )
 
 var generateFuns = []func(*structInfo) error{
@@ -12,12 +13,14 @@ func GenCode(addr string) error {
 	//创建数据库
 	sc, err := newSqlCli(addr)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	//获取数据库表信息
 	tables, err := sc.getTables()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
@@ -28,7 +31,6 @@ func GenCode(addr string) error {
 	}
 	for _, t := range tables {
 		if t == nil {
-			fmt.Println(t)
 			continue
 		}
 		si := tableConversion2Struct(t)
@@ -41,7 +43,7 @@ func GenCode(addr string) error {
 		}
 	}
 
-	//generate.GrpcGenerate()
+	generate.GrpcGenerate()
 
 	return nil
 }

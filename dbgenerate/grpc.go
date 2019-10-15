@@ -61,7 +61,7 @@ func conversionTpToPbInTemplate(tp, paramName, fileName string) string {
 	case "float32", "float64":
 		return fmt.Sprintf("float(%s.%s)", paramName, fileName)
 	case "time.Time":
-		return fmt.Sprintf("%s.%s.String()", paramName, fileName)
+		return fmt.Sprintf("timeToString(%s.%s)", paramName, fileName)
 	default:
 		return fmt.Sprintf("%s.%s", paramName, fileName)
 	}
@@ -74,7 +74,7 @@ func conversionTpToStructInTemplate(tp, paramName, fileName string) string {
 	case "float32", "float64":
 		return fmt.Sprintf("%s(%s.%s)", tp, paramName, fileName)
 	case "time.Time":
-		return "time.Now()"
+		return fmt.Sprintf("stringToTime(%s.%s)", paramName, fileName)
 	default:
 		return fmt.Sprintf("%s.%s", paramName, fileName)
 	}

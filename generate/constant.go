@@ -69,8 +69,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"net"
-	{{range $k,$v :=.PackageList}}
-	{{$v}}
+	"time"
+	{{range $k,$v :=.PackageList}}{{$v}}
 	{{end}}
 )
 
@@ -93,6 +93,15 @@ func StartGrpc() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 	return nil
+}
+
+func timeToString(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
+}
+
+func stringToTime(str string) time.Time {
+	t,_ := time.ParseInLocation("2006-01-02 15:04:05",str,time.Local)
+	return t
 }
 `
 )

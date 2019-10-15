@@ -37,7 +37,7 @@ func GrpcGenerate() {
 				logkit.Errorf("generate[%s] code fail", fd[i].Name())
 				return
 			}
-			if stru != nil && len(stru.Interfaces) > 0 {
+			if stru != nil && (len(stru.ExistInterfaces) != 0 || len(stru.Interfaces) != 0) {
 				serviceList = append(serviceList, stru)
 			}
 		}
@@ -62,7 +62,12 @@ func GrpcGenerate() {
 	packageList := mapset.NewSet()
 	for i := 0; i < len(serviceList); i++ {
 		//"{{$v.ProjectName}}/grpcservice/pb/{{$v.PackageName}}"
-		packageList.Add(fmt.Sprintf("\"%s/grpcservice/pb/%s\"", serviceList[i].ProjectName, serviceList[i].PackageName))
+		if len(serviceList[i].ExistInterfaces) > 0 {
+			serviceList[i].Interfaces = append(serviceList[i].Interfaces, serviceList[i].ExistInterfaces...)
+		}
+		if len(serviceList[i].Interfaces) > 0 {
+			packageList.Add(fmt.Sprintf("\"%s/grpcservice/pb/%s\"", serviceList[i].ProjectName, serviceList[i].PackageName))
+		}
 	}
 
 	err = startTmpl.Execute(startFd, map[string]interface{}{"ProjectName": thisProjectName, "ServiceList": serviceList, "PackageList": packageList.ToSlice()})
@@ -151,6 +156,10 @@ func generateImplement(stru *RpcServiceInfo) {
 				tempI := &i
 				for _, f := range fs {
 					if i.Name == f.Name {
+						if stru.ExistInterfaces == nil {
+							stru.ExistInterfaces = make([]RpcServiceInterfaceInfo, 0)
+						}
+						stru.ExistInterfaces = append(stru.ExistInterfaces, i)
 						tempI = nil
 						break
 					}

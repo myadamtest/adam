@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/myadamtest/adam/create"
+	"github.com/myadamtest/adam/dbgenerate"
 	"github.com/myadamtest/adam/generate"
 	"os"
 )
@@ -14,6 +15,9 @@ Usage:
 The commands are:
 		create 			crate a new project.example:adam create projectName
 		gen 			gen code, default rpc. support list [grpc].example:adam gen [grpc].
+The command gen:
+		grpc			generate code by proto file.
+		db 				generate code by db. example: adam gen db "dbuser:password@tcp(ip:port)/dbname"
 `
 
 const (
@@ -38,7 +42,16 @@ func main() {
 		}
 		create.CreateProject(agrs[2], templateUrl, templateName)
 	case "gen":
-		generate.GrpcGenerate()
+		if len(agrs) >= 3 && agrs[2] == "db" { // 生成数据库
+			if len(agrs) < 4 {
+				fmt.Print(help)
+				fmt.Println("need input db addr.")
+				return
+			}
+			_ = dbgenerate.GenCode(agrs[3])
+		} else {
+			generate.GrpcGenerate()
+		}
 	default:
 		fmt.Print(help)
 		return

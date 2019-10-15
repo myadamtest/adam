@@ -22,11 +22,12 @@ type RpcServiceInterfaceInfo struct {
 }
 
 type RpcServiceInfo struct {
-	Name        string
-	FileName    string
-	ProjectName string
-	PackageName string
-	Interfaces  []RpcServiceInterfaceInfo
+	Name            string
+	FileName        string
+	ProjectName     string
+	PackageName     string
+	Interfaces      []RpcServiceInterfaceInfo
+	ExistInterfaces []RpcServiceInterfaceInfo
 }
 
 func GetProtoStruct(fp string) (*RpcServiceInfo, error) {
