@@ -2,11 +2,10 @@ package dbgenerate
 
 import (
 	"fmt"
-	"github.com/myadamtest/adam/generate"
 )
 
 var generateFuns = []func(*structInfo) error{
-	generateStruct, generateDao, generateIDao, generateService, generateIService, generaGrpc,
+	generateStruct, generateDao, generateIDao, generateService, generateIService, generaGrpc, generateGrpcWithImpl,
 }
 
 func GenCode(addr string) error {
@@ -34,15 +33,15 @@ func GenCode(addr string) error {
 		}
 		si := tableConversion2Struct(t)
 
-		for _, f := range generateFuns {
+		for i, f := range generateFuns {
 			err = f(si)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println(err, i)
 			}
 		}
 	}
 
-	generate.GrpcGenerate()
+	//generate.GrpcGenerate()
 
 	return nil
 }

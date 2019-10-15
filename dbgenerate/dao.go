@@ -84,39 +84,6 @@ func generateIDao(info *structInfo) error {
 	return nil
 }
 
-func executeTemplate(tpl, fullFilename string, info *structInfo, append bool) error {
-	return executeTemplateWithFuncs(tpl, fullFilename, info, append, nil)
-}
-
-func executeTemplateWithFuncs(tpl, fullFilename string, info *structInfo, append bool, funcs template.FuncMap) error {
-	flag := os.O_WRONLY | os.O_CREATE
-	if append {
-		flag = os.O_WRONLY | os.O_APPEND | os.O_CREATE
-	}
-
-	fd, err := os.OpenFile(fullFilename, flag, 0644)
-	if err != nil {
-		return err
-	}
-
-	defer fd.Close()
-
-	templateObject := template.New("")
-	if funcs != nil {
-		templateObject = templateObject.Funcs(funcs)
-	}
-	templateObject, err = templateObject.Parse(tpl)
-	if err != nil {
-		return err
-	}
-
-	err = templateObject.Execute(fd, info)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func setNil(p string) string {
 	switch p {
 	case "string":

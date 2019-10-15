@@ -52,6 +52,49 @@ func (sql *sqlCli) getTableInfo(tableName string) ([]*tableFieldInfo, error) {
 	return tis, nil
 }
 
+func SqlSelect(db *sql.DB, sqlstr string, args ...interface{}) ([]map[string]string, error) {
+	rows, err := db.Query(sqlstr, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]interface{}, len(values))
+	var rets = make([]map[string]string, 0)
+
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		err = rows.Scan(scanArgs...)
+		if err != nil {
+			return nil, err
+		}
+
+		var ret = make(map[string]string)
+		var value string
+		for i, col := range values {
+			if col == nil {
+				value = ""
+			} else {
+				value = string(col)
+			}
+			ret[columns[i]] = value
+		}
+
+		rets = append(rets, ret)
+	}
+
+	return rets, err
+}
+
 func newSqlCli(addr string) (*sqlCli, error) {
 	db, err := gorm.Open("mysql", addr)
 	if err != nil {

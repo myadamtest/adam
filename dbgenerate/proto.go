@@ -30,7 +30,6 @@ func indexAdd(i int) int {
 
 func copyStructInfo(info *structInfo) *structInfo {
 	nInfo := &structInfo{}
-	*nInfo = *info
 
 	str, _ := json.Marshal(info)
 	_ = json.Unmarshal(str, nInfo)
@@ -48,19 +47,6 @@ func copyStructInfo(info *structInfo) *structInfo {
 	}
 
 	return nInfo
-}
-
-func type2Proto(tp string) string {
-	switch tp {
-	case "int", "int8", "int16":
-		return "int32"
-	case "float32", "float64":
-		return "float"
-	case "time.Time":
-		return "string"
-	default:
-		return tp
-	}
 }
 
 func createCommonProto() error {
