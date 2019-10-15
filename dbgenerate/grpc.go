@@ -8,22 +8,23 @@ import (
 )
 
 func generateGrpcWithImpl(info *structInfo) error {
-	err := generatePb(info.TableName)
-	if err != nil {
-		return err
+	//fixme ugly
+	if !fileExist(fmt.Sprintf("./grpcservice/pb/%s/common.pb.go", info.SimpleProjectName)) {
+		_ = generatePb("common", info.SimpleProjectName)
 	}
 
-	if !fileExist("./grpcservice/pb/pb/common.proto") {
-		_ = generatePb("common")
+	err := generatePb(info.TableName, info.SimpleProjectName)
+	if err != nil {
+		return err
 	}
 
 	return generateGrpcImpl(info)
 }
 
-func generatePb(tableName string) error {
-	_ = os.MkdirAll("./grpcservice/pb/pb", os.ModePerm)
+func generatePb(tableName, simpleProjectName string) error {
+	_ = os.MkdirAll(fmt.Sprintf("./grpcservice/pb/%s", simpleProjectName), os.ModePerm)
 
-	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/pb"), "--proto_path=./protofile/", fmt.Sprintf("%s.proto", tableName))
+	cmd := exec.Command("protoc", fmt.Sprintf("--go_out=plugins=grpc:./grpcservice/pb/%s", simpleProjectName), "--proto_path=./protofile/", fmt.Sprintf("%s.proto", tableName))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	err := cmd.Run()
@@ -86,14 +87,14 @@ package grpcservice
 import (
 	"fmt"
 	"{{.ProjectName}}/entity"
-	"{{.ProjectName}}/grpcservice/pb/pb"
+	"{{.ProjectName}}/grpcservice/pb/{{.SimpleProjectName}}"
 	"{{.ProjectName}}/service"
 	"context"
 )
 
 type {{.Name}}ServiceImpl struct {}
 
-func (this *{{.Name}}ServiceImpl) toStruct(dest *pb.{{.Name}}) *entity.{{.Name}}  {
+func (this *{{.Name}}ServiceImpl) toStruct(dest *{{.SimpleProjectName}}.{{.Name}}) *entity.{{.Name}}  {
 	{{.PrivateName}} := &entity.{{.Name}}{}
 
 	{{range $k,$v :=.FieldInfos}}{{$.PrivateName}}.{{$v.Name}} = {{conversionTpToStruct $v.Tp "dest" $v.Name}}
@@ -101,15 +102,15 @@ func (this *{{.Name}}ServiceImpl) toStruct(dest *pb.{{.Name}}) *entity.{{.Name}}
 	return {{.PrivateName}}
 }
 
-func (this *{{.Name}}ServiceImpl) toPb(dest *entity.{{.Name}}) *pb.{{.Name}}  {
-	{{.PrivateName}} := &pb.{{.Name}}{}
+func (this *{{.Name}}ServiceImpl) toPb(dest *entity.{{.Name}}) *{{.SimpleProjectName}}.{{.Name}}  {
+	{{.PrivateName}} := &{{.SimpleProjectName}}.{{.Name}}{}
 
 	{{range $k,$v :=.FieldInfos}}{{$.PrivateName}}.{{$v.Name}} = {{conversionTypeToPb $v.Tp "dest" $v.Name}}
 	{{end}}
 	return {{.PrivateName}}
 }
 
-func (this *{{.Name}}ServiceImpl) arrToStruct(dest []*pb.{{.Name}}) []*entity.{{.Name}} {
+func (this *{{.Name}}ServiceImpl) arrToStruct(dest []*{{.SimpleProjectName}}.{{.Name}}) []*entity.{{.Name}} {
 	if len(dest) == 0 {
 		return make([]*entity.{{.Name}},0)
 	}
@@ -121,19 +122,19 @@ func (this *{{.Name}}ServiceImpl) arrToStruct(dest []*pb.{{.Name}}) []*entity.{{
 	return {{.PrivateName}}s
 }
 
-func (this *{{.Name}}ServiceImpl) arrToPb(dest []*entity.{{.Name}}) []*pb.{{.Name}} {
+func (this *{{.Name}}ServiceImpl) arrToPb(dest []*entity.{{.Name}}) []*{{.SimpleProjectName}}.{{.Name}} {
 	if len(dest) == 0 {
-		return make([]*pb.{{.Name}},0)
+		return make([]*{{.SimpleProjectName}}.{{.Name}},0)
 	}
 
-	{{.PrivateName}}s := make([]*pb.{{.Name}},len(dest))
+	{{.PrivateName}}s := make([]*{{.SimpleProjectName}}.{{.Name}},len(dest))
 	for i,v := range dest {
 		{{.PrivateName}}s[i] = this.toPb(v)
 	}
 	return {{.PrivateName}}s
 }
 
-func (this *{{.Name}}ServiceImpl) pageToStruct(dest *pb.{{.Name}}PageRequest) entity.{{.Name}}Query  {
+func (this *{{.Name}}ServiceImpl) pageToStruct(dest *{{.SimpleProjectName}}.{{.Name}}PageRequest) entity.{{.Name}}Query  {
 	{{.PrivateName}}Query := entity.{{.Name}}Query{}
 	{{.PrivateName}}Query.Page.PageNo = int(dest.Page.PageNo)
 	{{.PrivateName}}Query.Page.PageSize = int(dest.Page.PageSize)
@@ -144,8 +145,8 @@ func (this *{{.Name}}ServiceImpl) pageToStruct(dest *pb.{{.Name}}PageRequest) en
 	return {{.PrivateName}}Query
 }
 
-func (this *{{.Name}}ServiceImpl) pageToPb(dest *entity.{{.Name}}Page) *pb.{{.Name}}PageResponse  {
-	{{.PrivateName}}Page := &pb.{{.Name}}PageResponse{}
+func (this *{{.Name}}ServiceImpl) pageToPb(dest *entity.{{.Name}}Page) *{{.SimpleProjectName}}.{{.Name}}PageResponse  {
+	{{.PrivateName}}Page := &{{.SimpleProjectName}}.{{.Name}}PageResponse{}
 	{{.PrivateName}}Page.Page.PageNo = int32(dest.Page.PageNo)
 	{{.PrivateName}}Page.Page.PageSize = int32(dest.Page.PageSize)
 	{{.PrivateName}}Page.Page.Total = int64(dest.Page.Total)
@@ -154,7 +155,7 @@ func (this *{{.Name}}ServiceImpl) pageToPb(dest *entity.{{.Name}}Page) *pb.{{.Na
 	return {{.PrivateName}}Page
 }
 
-func (this *{{.Name}}ServiceImpl) Insert(ctx context.Context,in *pb.{{.Name}}) (*pb.{{.Name}}, error) {
+func (this *{{.Name}}ServiceImpl) Insert(ctx context.Context,in *{{.SimpleProjectName}}.{{.Name}}) (*{{.SimpleProjectName}}.{{.Name}}, error) {
 	{{.PrivateName}} := this.toStruct(in)
 	err := service.{{.Name}}Service.Insert({{.PrivateName}})
 	if err!= nil {
@@ -165,7 +166,7 @@ func (this *{{.Name}}ServiceImpl) Insert(ctx context.Context,in *pb.{{.Name}}) (
 	return this.toPb({{.PrivateName}}),nil
 }
 		
-func (this *{{.Name}}ServiceImpl) Update(ctx context.Context,in *pb.{{.Name}}) (*pb.{{.Name}}, error) {
+func (this *{{.Name}}ServiceImpl) Update(ctx context.Context,in *{{.SimpleProjectName}}.{{.Name}}) (*{{.SimpleProjectName}}.{{.Name}}, error) {
 	{{.PrivateName}} := this.toStruct(in)
 	err := service.{{.Name}}Service.Update({{.PrivateName}})
 	if err!= nil {
@@ -176,7 +177,7 @@ func (this *{{.Name}}ServiceImpl) Update(ctx context.Context,in *pb.{{.Name}}) (
 	return this.toPb({{.PrivateName}}),nil
 }
 
-func (this *{{.Name}}ServiceImpl) Query(ctx context.Context,in *pb.{{.Name}}PkParamRequest) (*pb.{{.Name}}, error) {
+func (this *{{.Name}}ServiceImpl) Query(ctx context.Context,in *{{.SimpleProjectName}}.{{.Name}}PkParamRequest) (*{{.SimpleProjectName}}.{{.Name}}, error) {
 	{{.PrivateName}}, err := service.{{.Name}}Service.Query({{conversionTpToStruct .PrimaryKey.Tp "in" .PrimaryKey.Name}})
 	if err!=nil {
 		return nil,err
@@ -186,27 +187,27 @@ func (this *{{.Name}}ServiceImpl) Query(ctx context.Context,in *pb.{{.Name}}PkPa
 }
 
 		
-func (this *{{.Name}}ServiceImpl) Delete(ctx context.Context,in *pb.{{.Name}}PkParamRequest) (*pb.{{.Name}}, error) {
+func (this *{{.Name}}ServiceImpl) Delete(ctx context.Context,in *{{.SimpleProjectName}}.{{.Name}}PkParamRequest) (*{{.SimpleProjectName}}.{{.Name}}, error) {
 	err := service.{{.Name}}Service.Delete({{conversionTpToStruct .PrimaryKey.Tp "in" .PrimaryKey.Name}})
 	if err!=nil {
 		return nil,err
 	}
 
-	return &pb.{{.Name}}{},nil
+	return &{{.SimpleProjectName}}.{{.Name}}{},nil
 }
 
-func (this *{{.Name}}ServiceImpl) QueryList(ctx context.Context,in *pb.{{.Name}}) (*pb.{{.Name}}Array, error) {
+func (this *{{.Name}}ServiceImpl) QueryList(ctx context.Context,in *{{.SimpleProjectName}}.{{.Name}}) (*{{.SimpleProjectName}}.{{.Name}}Array, error) {
 	list,err := service.{{.Name}}Service.QueryList(*this.toStruct(in))
 	if err!=nil {
 		return nil,err
 	}
 
-	return &pb.{{.Name}}Array{
+	return &{{.SimpleProjectName}}.{{.Name}}Array{
 			{{.Name}}List:this.arrToPb(list),
 			},nil
 }
 
-func (this *{{.Name}}ServiceImpl) QueryPage(ctx context.Context,in *pb.{{.Name}}PageRequest) (*pb.{{.Name}}PageResponse, error) {
+func (this *{{.Name}}ServiceImpl) QueryPage(ctx context.Context,in *{{.SimpleProjectName}}.{{.Name}}PageRequest) (*{{.SimpleProjectName}}.{{.Name}}PageResponse, error) {
 	result,err := service.{{.Name}}Service.QueryPage(this.pageToStruct(in))
 	if err!= nil {
 		return nil,err

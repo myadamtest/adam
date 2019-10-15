@@ -3,7 +3,6 @@ package dbgenerate
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"text/template"
 )
@@ -16,7 +15,7 @@ func generaGrpc(info *structInfo) error {
 		return err
 	}
 
-	err = createCommonProto()
+	err = createCommonProto(info)
 	if err != nil {
 		return err
 	}
@@ -49,7 +48,7 @@ func copyStructInfo(info *structInfo) *structInfo {
 	return nInfo
 }
 
-func createCommonProto() error {
+func createCommonProto(info *structInfo) error {
 	filename := "./protofile/common.proto"
 	_, err := os.Stat(filename)
 	if err == nil {
@@ -60,7 +59,7 @@ func createCommonProto() error {
 		return nil
 	}
 
-	return ioutil.WriteFile(filename, []byte(commonProtoTemplate), 0644)
+	return executeTemplate(commonProtoTemplate, filename, info, true)
 }
 
 const protoTemplate = `
@@ -68,7 +67,7 @@ syntax = "proto3";
 
 import "common.proto";
 
-package pb;
+package {{.SimpleProjectName}};
 
 service {{.Name}}Service {
   // 增加数据
@@ -113,7 +112,7 @@ message {{.Name}}PageResponse {
 const commonProtoTemplate = `
 syntax = "proto3";
 
-package pb;
+package {{.SimpleProjectName}};
 
 message Page {
   int32 PageNo = 1;

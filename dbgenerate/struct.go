@@ -2,18 +2,20 @@ package dbgenerate
 
 import (
 	"fmt"
+	"github.com/bookrun-go/fileutils/fileinfo"
 	"github.com/myadamtest/adam/utils"
 	"os"
 	"strings"
 )
 
 type structInfo struct {
-	Name        string
-	TableName   string
-	ProjectName string
-	PrivateName string
-	FieldInfos  []*structFieldInfo
-	PrimaryKey  *structFieldInfo //fixme 暂设假设只是单主键
+	Name              string
+	TableName         string
+	ProjectName       string
+	SimpleProjectName string
+	PrivateName       string
+	FieldInfos        []*structFieldInfo
+	PrimaryKey        *structFieldInfo //fixme 暂设假设只是单主键
 }
 
 type structFieldInfo struct {
@@ -46,6 +48,7 @@ func tableConversion2Struct(info *tableInfo) *structInfo {
 	//fixme 暂设
 	//si.ProjectName = "github.com/myadamtest/adam/dbgenerate"
 	si.ProjectName, _ = utils.GetProjectName()
+	si.SimpleProjectName = fileinfo.GetFileSimpleName(si.ProjectName)
 
 	si.FieldInfos = make([]*structFieldInfo, len(info.Fields))
 	for i, f := range info.Fields {

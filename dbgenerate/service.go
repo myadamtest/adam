@@ -26,19 +26,20 @@ func generateService(info *structInfo) error {
 
 func generateIService(info *structInfo) error {
 	filename := "./service/IService.go"
-	_, err := os.Stat(filename)
 
-	if err != nil && !os.IsNotExist(err) {
+	exist, err := serviceIsExist(filename)
+	if err != nil {
 		return err
 	}
 
-	if os.IsNotExist(err) {
+	if !exist {
 		err = executeTemplate(serviceInterfaceBase, filename, info, false)
 		if err != nil {
 			return err
 		}
 	}
 
+	//fixme 这种符号需要规范化
 	splitStr := "func Init() {"
 
 	b, err := ioutil.ReadFile(filename)
@@ -65,6 +66,29 @@ func generateIService(info *structInfo) error {
 	}
 
 	return nil
+}
+
+func serviceIsExist(filename string) (bool, error) {
+	_, err := os.Stat(filename)
+
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return false, err
+	}
+
+	str := strings.TrimSpace(string(b))
+	if str == "package service" {
+		return false, nil
+	}
+	return true, nil
 }
 
 const serviceTemplate = `

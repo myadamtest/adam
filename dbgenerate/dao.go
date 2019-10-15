@@ -45,13 +45,13 @@ func generateCommonOrm() error {
 
 func generateIDao(info *structInfo) error {
 	filename := "./dao/IDao.go"
-	_, err := os.Stat(filename)
 
-	if err != nil && !os.IsNotExist(err) {
+	exist, err := daoIsExist(filename)
+	if err != nil {
 		return err
 	}
 
-	if os.IsNotExist(err) {
+	if !exist {
 		err = executeTemplate(daoInterfaceBase, filename, info, false)
 		if err != nil {
 			return err
@@ -82,6 +82,29 @@ func generateIDao(info *structInfo) error {
 	}
 
 	return nil
+}
+
+func daoIsExist(filename string) (bool, error) {
+	_, err := os.Stat(filename)
+
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return false, err
+	}
+
+	str := strings.TrimSpace(string(b))
+	if str == "package dao" {
+		return false, nil
+	}
+	return true, nil
 }
 
 func setNil(p string) string {
