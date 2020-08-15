@@ -7,7 +7,13 @@ require (
 	github.com/bookrun-go/parseutil v0.0.0-20191009065905-b2e940c2350a
 	github.com/deckarep/golang-set v1.7.1
 	github.com/go-sql-driver/mysql v1.4.1
+	github.com/go-xorm/xorm v0.7.9
+	github.com/gogo/protobuf v1.2.0
+	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/jinzhu/gorm v1.9.11
-	github.com/myadamtest/gobase v0.0.0-20191011092525-a3df576bdaaf
+	github.com/kr/pretty v0.2.1 // indirect
 	github.com/myadamtest/logkit v0.0.0-20190930041214-7bace5b6a7d6
+	github.com/tallstoat/pbparser v0.2.0
+	golang.org/x/crypto v0.0.0-20191010185427-af544f31c8ac // indirect
+	xorm.io/core v0.7.2-0.20190928055935-90aeac8d08eb
 )

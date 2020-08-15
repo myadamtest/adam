@@ -1,0 +1,17 @@
+// 如果使用此注释，则使用proto3; 否则使用proto2
+syntax = "proto3";
+
+package main;
+
+// 引入外部的proto对象
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+// 生成类的包名
+option java_package = "com.hry.spring.proto.complex";
+//生成的数据访问类的类名
+option java_outer_classname = "MyComplexObjectEntity";
+
+message A {
+    int32 id = 1;
+    string name = 2 [(gogoproto.nullable) = false];
+ }
