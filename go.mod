@@ -13,7 +13,7 @@ require (
 	github.com/jinzhu/gorm v1.9.11
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/myadamtest/logkit v0.0.0-20190930041214-7bace5b6a7d6
-	github.com/tallstoat/pbparser v0.2.0
 	golang.org/x/crypto v0.0.0-20191010185427-af544f31c8ac // indirect
+	golang.org/x/tools v0.0.0-20190312170243-e65039ee4138
 	xorm.io/core v0.7.2-0.20190928055935-90aeac8d08eb
 )
