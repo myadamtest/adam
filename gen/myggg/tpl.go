@@ -38,7 +38,9 @@ type A struct {
 func (x *xxService) Create() error {
 	mkdg := A{}
 	id, jjf := x.engine.Insert(mkdg)
+
 	if jjf != nil {
+		x.log.Println("err:%s,%s", jjf, mkdg)
 
 		mkl := func(i int64) int64 {
 			return i + 1

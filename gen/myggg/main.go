@@ -6,11 +6,12 @@ import (
 	"go/ast"
 	"go/importer"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"io/ioutil"
-	"math"
+	"os"
 	"reflect"
 )
 
@@ -30,89 +31,131 @@ func main() {
 		return
 	}
 
+	/*	astutil.Apply(file, func(cursor *astutil.Cursor) bool {
+			fmt.Println(fmt.Sprintf("%p",cursor.Node()))
+			if strings.Contains(fmt.Sprintf("%s",cursor.Node()),"Create") {
+				fmt.Println(fmt.Sprintf("%p",cursor.Node()),">>>>>>>>>>>")
+				express, err := GetFuncLogExpress(cursor.Node().(*ast.FuncDecl))
+				fmt.Println(express,err)
+			}
+			return true
+		}, func(cursor *astutil.Cursor) bool {
+			fmt.Println(fmt.Sprintf("%p",cursor.Node()))
+			return true
+		})*/
+
 	global := 0
 	logCtx := &LogContext{}
 	astutil.Apply(file, func(cursor *astutil.Cursor) bool {
-		logCtx.index++
+		if logCtx.SkipNode != nil {
+			return true
+		}
 		global++
 		if 310 == global {
 			fmt.Println("")
 		}
-		fmt.Println(logCtx.index, global, cursor.Node())
 		switch n := cursor.Node().(type) {
 		case *ast.FuncDecl:
 			express, err := GetFuncLogExpress(n)
 			if err != nil {
 
 			} else {
-				logCtx.funIndex = logCtx.index
+				logCtx.FunNode = cursor.Node()
 				logCtx.PreExpress = express
 			}
 			return true
 		}
 
-		// 表达式为空，证明不可以打印日志
-		if logCtx.PreExpress == nil {
+		willLog := NeedPrintLog(logCtx, cursor, info)
+		if willLog {
+			// 下一轮打印日志
+			logCtx.SkipNode = cursor.Node()
 			return true
 		}
 
-		if t, ok := cursor.Node().(*ast.AssignStmt); !ok {
-			return true
-		} else if len(t.Rhs) == 0 {
-			return true
-			// t.Rhs[0] 确定顶只有T0是call?
-		} else if callExpr, ok := t.Rhs[0].(*ast.CallExpr); !ok {
-			return true
-		} else {
-			var results *types.Tuple
-			if funType, ok := info.Types[callExpr]; !ok {
-				return true
-			} else if funRealType, ok := funType.Type.(*types.Signature); !ok {
-				return true
+		if logCtx.LogAssign != nil {
+			if is, ok := cursor.Node().(*ast.IfStmt); ok {
+				is.Body.List = append([]ast.Stmt{logCtx.LogAssign}, is.Body.List...)
 			} else {
-				results = funRealType.Results()
+				// todo 创建 if
 			}
-
-			if results.Len() == 0 {
-				return true
-			}
-
-			last := results.At(results.Len() - 1)
-			if named, ok := last.Type().(*types.Named); !ok {
-				return true
-			} else if named.Obj() == nil {
-				return true
-			} else if named.Obj().Id() != "_.error" {
-				return true
-			}
-			// 是错误，打印，只判断最后一个参数是否错误类型
-
-			// 返回参数没有接收
-			if len(t.Lhs) == 0 {
-				return true
-			}
-
-			ev, ok := t.Lhs[results.Len()-1].(*ast.Ident)
-			if !ok {
-				return true
-			}
-			logAssign := GetLogPrintStmt(callExpr.Args, logCtx, ev.String())
-			logCtx.CurrentCursor = cursor
-			logCtx.LogAssign = logAssign
+			logCtx.LogAssign = nil
 		}
+
 		return true
 	}, func(cursor *astutil.Cursor) bool {
-		logCtx.index--
 		global++
 		//fmt.Println(logCtx.index,global,cursor.Node())
 		// 一个符合条件的函数结束
-		if logCtx.index == logCtx.funIndex {
-			fmt.Println(logCtx.index)
+		if cursor.Node() == logCtx.FunNode {
 			logCtx.PreExpress = nil
-			logCtx.funIndex = math.MaxInt32
 		}
+
+		// 跳过结束
+		if logCtx.SkipNode == cursor.Node() {
+			logCtx.SkipNode = nil
+			return true
+		}
+
 		return true
 	})
+
+	printer.Fprint(os.Stdout, fs, file)
+}
+
+func NeedPrintLog(logCtx *LogContext, cursor *astutil.Cursor, info *types.Info) bool {
+	// 表达式为空，证明不可以打印日志
+	if logCtx.PreExpress == nil {
+		return false
+	}
+
+	if t, ok := cursor.Node().(*ast.AssignStmt); !ok {
+		return false
+	} else if len(t.Rhs) == 0 {
+		return false
+		// t.Rhs[0] 确定顶只有T0是call?
+	} else if callExpr, ok := t.Rhs[0].(*ast.CallExpr); !ok {
+		return false
+	} else {
+		var results *types.Tuple
+		if funType, ok := info.Types[callExpr]; !ok {
+			return false
+		} else if funRealType, ok := funType.Type.(*types.Signature); !ok {
+			if results, ok = funType.Type.(*types.Tuple); !ok {
+				return false
+			}
+		} else {
+			results = funRealType.Results()
+		}
+
+		if results.Len() == 0 {
+			return false
+		}
+
+		last := results.At(results.Len() - 1)
+		if named, ok := last.Type().(*types.Named); !ok {
+			return false
+		} else if named.Obj() == nil {
+			return false
+		} else if named.Obj().Id() != "_.error" {
+			return false
+		}
+		// 是错误，打印，只判断最后一个参数是否错误类型
+
+		// 返回参数没有接收
+		if len(t.Lhs) == 0 {
+			return false
+		}
+
+		ev, ok := t.Lhs[results.Len()-1].(*ast.Ident)
+		if !ok || ev.String() == "_" {
+			return false
+		}
+		logAssign := GetLogPrintStmt(callExpr.Args, logCtx, ev.String())
+		logCtx.CurrentCursor = cursor
+		logCtx.LogAssign = logAssign
+	}
+	return true
 }
 
 func GetLogPrintStmt(args []ast.Expr, ctx *LogContext, errValuableName string) *ast.ExprStmt {
@@ -132,9 +175,7 @@ func GetLogPrintStmt(args []ast.Expr, ctx *LogContext, errValuableName string) *
 	a1 := &ast.ExprStmt{
 		X: &ast.CallExpr{
 			Fun: &ast.SelectorExpr{
-				X: &ast.SelectorExpr{
-					X: &ast.Ident{Name: ctx.PreExpress.Express},
-				},
+				X:   &ast.Ident{Name: ctx.PreExpress.Express},
 				Sel: &ast.Ident{Name: "Println"},
 			},
 			Args: newArgs,
@@ -190,6 +231,7 @@ func GetFuncLogExpress(funNode *ast.FuncDecl) (*LogExpress, error) {
 	// 定制
 	logPackage := "myLog"
 	fullName := ""
+	valuableName := ""
 	for _, field := range fieldList {
 		if se, ok := field.Type.(*ast.StarExpr); !ok {
 			if i, ok := field.Type.(*ast.Ident); !ok {
@@ -206,6 +248,9 @@ func GetFuncLogExpress(funNode *ast.FuncDecl) (*LogExpress, error) {
 		} else {
 			fullName = x.Name
 		}
+		if len(field.Names) > 0 {
+			valuableName = field.Names[0].String()
+		}
 
 		if fullName == logPackage {
 			break
@@ -215,7 +260,7 @@ func GetFuncLogExpress(funNode *ast.FuncDecl) (*LogExpress, error) {
 		return nil, errors.New("没有导入错误包")
 	}
 
-	return &LogExpress{Express: fmt.Sprintf("%s.%s", recv.Names[0], fullName)}, nil
+	return &LogExpress{Express: fmt.Sprintf("%s.%s", recv.Names[0], valuableName)}, nil
 }
 
 func SelectorExpressToString(selector *ast.SelectorExpr) string {
@@ -240,8 +285,8 @@ type LogContext struct {
 	PreExpress    *LogExpress // 日志前缀表达式
 	CurrentCursor *astutil.Cursor
 	LogAssign     *ast.ExprStmt
-	index         int64
-	funIndex      int64
+	FunNode       ast.Node
+	SkipNode      ast.Node
 }
 
 func printType(i interface{}) {
